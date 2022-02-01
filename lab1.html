@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="description" content="Github web page for ECE 5960: Design and Implementation of fast robots (2020SP)." />
         <meta name="author" content="Owen Deng (qd39@cornell.edu)" />
-        <title>Fast Robots: About</title>
+        <title>Fast Robots: Lab 1</title>
         <link rel="icon" type="image/x-icon" href="assets/ai.png" />
         <!-- Font Awesome icons (free version)-->
         <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
@@ -34,17 +34,17 @@
             </div>
         </nav>
         <!-- Page Header-->
-        <header class="masthead" style="background-image: url('assets/img/post-bg.jpg')">
+        <header class="masthead" style="background-image: url('assets/img/lab1/lab1-0.jpg')">
             <div class="container position-relative px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <div class="post-heading">
-                            <h1>Man must explore, and this is exploration at its greatest</h1>
-                            <h2 class="subheading">Problems look mighty small from 150 miles up</h2>
+                            <h1>The Artemis board</h1>
+                            <h2 class="subheading">Set up, run a few examples, and get familiar with the board</h2>
                             <span class="meta">
                                 Posted by
-                                <a href="#!">Start Bootstrap</a>
-                                on August 24, 2021
+                                <a href="#!">Owen Deng</a>
+                                on February 1, 2022
                             </span>
                         </div>
                     </div>
@@ -56,28 +56,78 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
-                        <p>Never in all their history have men been able truly to conceive of the world as one: a single sphere, a globe, having the qualities of a globe, a round earth in which all the directions eventually meet, in which there is no center because every point, or none, is center — an equal earth which all men occupy as equals. The airman's earth, if free men make it, will be truly round: a globe in practice, not in theory.</p>
-                        <p>Science cuts two ways, of course; its products can be used for both good and evil. But there's no turning back from science. The early warnings about technological dangers also come from science.</p>
-                        <p>What was most significant about the lunar voyage was not that man set foot on the Moon but that they set eye on the earth.</p>
-                        <p>A Chinese tale tells of some men sent to harm a young girl who, upon seeing her beauty, become her protectors rather than her violators. That's how I felt seeing the Earth for the first time. I could not help but love and cherish her.</p>
-                        <p>For those who have seen the Earth from space, and for the hundreds and perhaps thousands more who will, the experience most certainly changes your perspective. The things that we share in our world are far more valuable than those which divide us.</p>
-                        <h2 class="section-heading">The Final Frontier</h2>
-                        <p>There can be no thought of finishing for ‘aiming for the stars.’ Both figuratively and literally, it is a task to occupy the generations. And no matter how much progress one makes, there is always the thrill of just beginning.</p>
-                        <p>There can be no thought of finishing for ‘aiming for the stars.’ Both figuratively and literally, it is a task to occupy the generations. And no matter how much progress one makes, there is always the thrill of just beginning.</p>
-                        <blockquote class="blockquote">The dreams of yesterday are the hopes of today and the reality of tomorrow. Science has not yet mastered prophecy. We predict too much for the next year and yet far too little for the next ten.</blockquote>
-                        <p>Spaceflights cannot be stopped. This is not the work of any one man or even a group of men. It is a historical process which mankind is carrying out in accordance with the natural laws of human development.</p>
-                        <h2 class="section-heading">Reaching for the Stars</h2>
-                        <p>As we got further and further away, it [the Earth] diminished in size. Finally it shrank to the size of a marble, the most beautiful you can imagine. That beautiful, warm, living object looked so fragile, so delicate, that if you touched it with a finger it would crumble and fall apart. Seeing this has to change a man.</p>
-                        <a href="#!"><img class="img-fluid" src="assets/img/post-sample-image.jpg" alt="..." /></a>
-                        <span class="caption text-muted">To go places and do things that have never been done before – that’s what living is all about.</span>
-                        <p>Space, the final frontier. These are the voyages of the Starship Enterprise. Its five-year mission: to explore strange new worlds, to seek out new life and new civilizations, to boldly go where no man has gone before.</p>
-                        <p>As I stand out here in the wonders of the unknown at Hadley, I sort of realize there’s a fundamental truth to our nature, Man must explore, and this is exploration at its greatest.</p>
-                        <p>
-                            Placeholder text by
-                            <a href="http://spaceipsum.com/">Space Ipsum</a>
-                            &middot; Images by
-                            <a href="https://www.flickr.com/photos/nasacommons/">NASA on The Commons</a>
-                        </p>
+                        <p>In a robotics class, or any class with microcontroller programming contents, there is often a board. The development board we use for this course is called "Artemis." To be more specific, the board is the <a href="https://www.sparkfun.com/products/15443" class="link-danger">SparkFun RedBoard Artemis Nano</a>. Please check out the link to learn more! </p>
+
+                        <p>In this very first lab, the high level objective is to set up the development environment on our PC, and run a couple example scripts on the board. At the end, we programed the board to turn on the LED when I whistle, and off otherwise.</p>
+
+                        <h2 class="section-heading">The Arduino IDE</h2>
+                        <p>For this lab, we use the Arduino IDE to write code and program the board. The board has a USB-C connector, which allows it to communicate with our PC via USB protocol. The Arduino IDE, with the appropriate set up, is compatible with Artemis board for an easy-to-use development environment. In the future, however, a workflow with a more capable text editor (e.g. VS Code + PlatformIO) could be more preferable when the program gets more complicated. But that is another story...</p>
+                        <p>The <a href="https://learn.sparkfun.com/tutorials/artemis-development-with-arduino" class="link-primary">SparkFun website</a> has a thorough documentation of how to install and set up the Arduino IDE with the Artemis board. </p>
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab1/lab1-1.png" alt="..." /></a>
+                        <span class="caption text-muted">What the Arduino IDE looks like on my computer. Notice the line of text in the bottom denoting the IDE is set up for our RedBoard Artemis Nano!</span>
+
+                        <h2 class="section-heading">Blink</h2>
+                        <p>For anyone who has played with Arduino before, you know the Blink example is like the "Hello World" for embedded development boards. The program itself is very simple, the on-board LED is driven on and off periodically. However, to have the program working, one would need to go through the compile, upload, reset process with the Arduino IDE and the microcontroller. This is a sanity check that makes sure the development setup is working properly such that we could progress to the next steps.</p>
+                        <p>My Blink program works on my board with no issues. The lab handout documents that a slow down of baud rate could be needed, but the default 460800 works well with my board and PC.</p>
+
+                        <iframe width="320" height="515"
+                        src="https://www.youtube.com/embed/x5_3AogCbt4">
+                        </iframe>
+                        <span class="caption text-muted">A video of the Blink program running on my Artemis board.</span>
+
+                        <h2 class="section-heading">Serial Communication</h2>
+                        <p><a href="https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter" class="link-primary">Serial communication/UART</a> is very useful for development programs for the Artemis board. The Arduino IDE has a serial monitor. With the Artemis board being compatible with Arduino IDE's library, it is easy to "print" values to the serial monitor as if software programmer are doing printf's to stdout. This is helpful for debugging as we could monitor the numerical values of certain variables by printing them out to the serial monitor in real time. The code snippet below shows how easy it is to print values to the serial monitor.</p>
+                        <pre>
+                            <code>
+Serial.begin(BAUD); // setting the baud rate
+// similar to doing printf
+Serial.println("Hey Hey I'm printing!"); 
+                            </code>
+                        </pre>
+                        <p>What happens is that the values are sent from the board to the PC via the USB protocol. The details can be found on the wikipedia page and is not of interest here... The example serial program first prints out some lines to the serial monitor after resetting, and then it listens to the serial monitor, and echos whatever is sent from the PC to the board, back to the PC.</p>
+                        <P>The video below shows that the serial port is working. One can see that the PC receives lines of text after resetting, and then the board listens and echos whatever is sent from the PC. </P>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/4nOVqdvqNkw">
+                        </iframe>
+                        <span class="caption text-muted">The serial example working on the Artemis board.</span>
+
+                        <h2 class="section-heading">Analog Read</h2>
+                        <p>The next example to run is called analog read. The Artemis board has an onboard ADC (analog to digital converter), which can read analog voltages. It also has some internal ADC channels that can measure 1) internal die temperature, 2) VCC and VSS voltages. In this example, the program reads the ADC value from the die temperature sensor, and prints the information to the serial monitor. (Ha it's connected to the last example!) </p>
+                        <p>In my test, the internal die temperature ADC reader at room temperature is around 33600s (first screenshot below), and if I'm placing it on a hand warmer, the reading becomes around 35000, which is noticeably different. It shows that the temperature sensor is working! </p>
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab1/lab1-2.png" alt="..." /></a>
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab1/lab1-3.png" alt="..." /></a>
+
+
+                        <h2 class="section-heading">Microphone Output</h2>
+                        <p>The Artemis boards have a pulse density microphone (PDM) on it. PDM stands for <a href="https://en.wikipedia.org/wiki/Pulse-density_modulation" class="link-primary">pulse-density modulation</a>. This example is a demonstration of how to use the PDM libaray and the FFT (fast fourier-transform) library. The program constantly listens to data from the microphone, and it performs FFT on the signal to extract the frequency spectrum. After that, it prints the loudest frequency to the serial monitor. </p>
+                        <p>The video below shows the board with this program in action. When nothing is played, the loudest frequency is around 125 Hz. When the single frequency tone generator is playing sound and dominates over background noise, the output on the serial monitor matches the frequency of sound played.</p>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/ej5fmlbo8lA">
+                        </iframe>
+                        <span class="caption text-muted">Demo of the microphone example. One can see that the serial output matches the frequency played.</span>
+
+                        <h2 class="section-heading">Whistle LED</h2>
+                        <p>The goal here is to program the board to turn on the LED when I whistle, and off otherwise. Unfortunately, I spent 30 minutes on youtube videos trying to learn whistling but couldn't, so I will play a high frequency instead of whistling.</p>
+                        <p>The logic of the program is easy: the MCU should be constantly listening to microphone outputs, performing FFTs on the signal, and picking up the loudest frequency just like from the last example. Then there is this extra logic that sets the LED to on when the loudest frequency is beyond 1000 Hz. Programming is straight-forward as this is solely a combination of the LED and the microphone example. Pseudocode is provided below. </p>>
+
+                        <pre>
+                            <code>
+// inside the loop block
+if microphone_available:
+    get_microphone_data();
+    if loudest_frequency > 1000:
+        set LED_ON;
+    else:
+        set LED_OFF;
+                            </code>
+                        </pre>
+
+                        <p>The video below shows this program running on the Artemis board. A tone of frequency 1245 Hz is played intermittently in the background. When the tone is played, the on-board LED lights on. When the tone stops playing or is not playing, the on-board LED turns off. The program is working correctly in the first run and no debugging effort was involved. </p>
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/G7cqye-wTzA">
+                        </iframe>
                     </div>
                 </div>
             </div>
