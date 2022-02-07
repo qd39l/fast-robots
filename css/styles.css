@@ -11207,6 +11207,12 @@ header.masthead .site-heading .h1 {
   margin-top: 3.75rem;
 }
 
+.section-subheading {
+    font-size: 2.00rem;
+    font-weight: 700;
+    margin-top: 3.75rem;
+  }
+
 .caption {
   font-size: 0.875rem;
   font-style: italic;
