@@ -36,7 +36,7 @@
         </nav>
         <!-- Page Header-->
         <!-- FIXME -->
-        <header class="masthead" style="background-image: url('assets/img/post-bg.jpg')">
+        <header class="masthead" style="background-image: url('assets/img/lab1/lab1-0.jpg')">
             <div class="container position-relative px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
@@ -63,28 +63,238 @@
 
                         <h2 class="section-heading">High-level ideas</h2>
                         <p> To provide better context to the following sections (and to make this post self-contained), here are some high-level ideas about the Bluetooth code framework we are working with. </p>
-                        
+                        <p> At the <mark>Artemis</mark> end, while the Bluetooth connection is valid, the program iterates between two subrouitines: <code>write_data()</code> and <code>read_data()</code>. <code>write_data()</code> sends a float for every <code>interval</code> milliseconds, and <code>read_data()</code> reads a command & handle correspondingly. There are three services: one for receiving commands, one for sending out strings, and one for sending out floats. </p>
+                        <p> At the <mark>PC</mark> end, it can send comamnds to the board, or read data from the board by either setting up notification or explicitly read a characteristic.</p>
+                        <p> This lab is therefore centered around using the three services in combination of commands to handle different tasks.</p> 
 
                         <h2 class="section-heading">ECHO command</h2>
-                        <p>  </p>
+                        <p> The first task is send an <code>ECHO</code> command with a string value from the computer to the Artemis board, and receive an augmented string on the computer. And example would look like this:
+                            <pre>
+                                <code>
+    // send from PC
+    PC: HiHello
+    // send from robot
+    ROBOT: Robot says -> HiHello :)
+                                </code>
+                            </pre>
+                        
+                        Implementation is straight-forward. Simply use the provided <code>EString</code> class to handle string concatenation, and modify the corresponding string characteristic. When the PC reads the characteristic, it'll see the augmented string as demonstrated in the video below.
+                        
+                        </p>
                     
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/_V3eg8tsKSM">
+                        </iframe>
+                        <span class="caption text-muted">Demo of the <code>ECHO</code> command. The PC sends "Hi Owen!!", and the Artemis board replies "Robot says -> Hi Owen !! :)"</span>
+
                     
                         <h2 class="section-heading">SEND_THREE_FLOATS command</h2>
-                        <p> </p>
+                        <p> This task involves sending three floats to the Artemis board using the <code>SEND_THREE_FLOATS</code> command. Pseudocode provided below.</p>
                     
+                        <pre>
+                            <code>
+case SEND_THREE_FLOATS:
+    float float_a, float_b, float_c;
+
+    extract_next_value(float_a);
+    ... // do the same with float_b, float_c
+
+    serial_print_values(float_a, float_b, float_c);
+
+    bluetooth_send_string(str(float_a, float_b, float_c));
+                            </code>
+                        </pre>
+                        
+                        <p> In the demo below, you will see three numbers <code>2.717, 3.141, 8.854</code> being sent to the Artemis by the PC (sent as a string), the Artemis received the numbers and prints them to the serial port (on the right window). The Artemis board also updates the string characteristic, which is subsequently read by the PC.  </p>
                     
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/n4jyw-rl-_M">
+                        </iframe>
+                        <span class="caption text-muted">Demo of the <code>SEND_THREE_FLOATS</code> command.</span>
+
+
                         <h2 class="section-heading">Notification handler</h2>
-                        <p> </p>
-                    
+                        <p> The task is to setup a notification handler in Python to receive the float value (which is updated every <code>interval</code> milliseconds, with +0.5 increment every time). A global variable is updated by the callback function such that we do not have to explicitly use the <code>receive_float()</code> function to get the float value. Pseudocode provided below.</p>
+
+                        <pre>
+                            <code>
+--------------------- PC code ---------------------
+// The callback function
+async def receive_float_notification(uuid, byte_array):
+  global FLOAT_NUM
+  FLOAT_NUM = convert_to_float(byte_array)
+
+// setup notification
+start_notify(uuid, receive_float_notification)
+
+                            </code>
+                        </pre>
+                        
+                        <p> From the demo video below, you will see that the <code>print(FLOAT_NUM, FLOAT_RAW)</code> yields different output between calls, without us explicitly calling <code>receive_float()</code>.</p>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/xQ-hk0HNYPY">
+                        </iframe>
+                        <span class="caption text-muted">Demo of notification handler.</span>
 
                         <h2 class="section-heading">receive_float() vs. receive_string()</h2>
-                        <p> </p>
+                        <p> 
+                            The lab handout explicitly asked the question: what's the difference between: <br>
+                            &nbsp&nbsp&nbsp&nbsp1. Receive a float value in Python using <code>receive_float()</code> on a characteristic that is defined as BLEFloatCharacteristic in the Artemis side <br>
+                            &nbsp&nbsp&nbsp&nbsp2. Receive a float value in Python using <code>receive_string()</code> (and subsequently converting it to a float type in Python) on a characteristic that is defined as a BLECStringCharacteristic in the Artemis side <br>
+                        </p>
+
+                        <p>
+                            These two approaches have a handful of differences.
+                            <ul class="list-unstyled">
+                                  <ul>
+                                    <li>Doing (2) allows sending multiple float values together at one "packet." While doing (1) only allows sending the floats one by one. At some circumstances the application may prefer having several floats "bind" together and sent as one data point.</li>
+                                    <li>Doing (1) is technically more "efficient." A char takes 8-bits, and it can represent a digit. However, a digit can fit into 4-bits, and each char is wasting 4-bits.</li>
+                                    <li>Doing (2) incurs the overhead of parsing strings.</li>
+                                    <li>For floats with large exponentials, doing (2) may be tricky (to program).</li>
+                                  </ul>
+                            </ul>
+                        </p>
 
                         <h2 class="section-heading">Effective data rate</h2>
-                        <p> </p>
+                        <p> This task asks me to send a message from the computer and receive a reply from the Artemis board. By noting the respective times for each event, we can technically calculate the "data rate." I did this with two approaches.</p>
+                        <h2 class="section-subheading">Approach 1</h2>
+                        <p> I added a <code>SPEED</code> command to the Artemis. Once the command is triggered, the Artemis board keeps sending 150-byte long strings to the PC. </p>
+                        <p> The PC simply sets up a notification handler, and it sends the <code>SPEED</code> command and starts the timer. The notification handler increases a <code>size_received</code> variable by 150 in every call, and the main thread stops when it has received 100000 bytes. By noting the time delta for streaming 100000 bytes, the effective bandwidth can be calculated. The code snippet is attached below.  </p>
+                        
+                        <pre>
+                            <code>
+// The callback function
+# global and const vars
+size_received = 0
+STOP_BYTES = 100000
+TXN_BYTES = 150
 
+# set up notification
+async def receive_150_bytes(uuid, byte_arr):
+    global size_received
+    size_received += TXN_BYTES
+
+ble.start_notify(ble.uuid["RX_STRING"], receive_150_bytes)
+
+# send command
+ble.send_command(CMD.SPEED, "")
+
+# start timer
+t_start = time.time()
+
+# wait until size reaches STOP_BYTES
+while True:
+    if size_received >= STOP_BYTES:
+        break
+    await asyncio.sleep(1)
+
+t_end = time.time()
+
+# stop timer
+print(f'elapsed time = {t_end - t_start} seconds. received {STOP_BYTES} bytes. average speed = {STOP_BYTES / (t_end - t_start) / 1000} kilobytes/second')
+
+
+                            </code>
+                        </pre>
+
+                        <p> The bandwidth is calculated to be <mark>2.44 kbps</mark>. There are a couple of underlying assumptions involved. For example, we assume the global variable is updated correctly (which is not guaranteed). But for a preliminary test, this method should suffice.</p>
+
+                        <h2 class="section-subheading">Approach 2</h2>
+                        <p> The second approch is similar, but it only measures the time delta for sending 1 string. The Python script sweeps through string length from 140 to 1 bytes. To lower the noise, 30 trials are measured for each string length, and the average is taken. This approach allows us to see how the "packet size" affects the time needed for the PC -> Artemis -> PC trip. Code snippet is attached below.</p>
+                        <pre>
+                            <code>
+size = []
+local_sendtime = time.time()
+local_delta = 0
+delta = []
+trials = 30
+
+# setup notification
+async def receive_bytes(uuid, byte_arr):
+    global local_delta, local_sendtime
+    local_delta += time.time() - local_sendtime
+
+ble.start_notify(ble.uuid["RX_STRING"], receive_bytes)
+
+# sweep through the size range
+for i in range(141, 0, -10):
+    print(f'working on {i}')
+    # prepare string
+    string_to_send = "a" * i
+    size.append(i)
+    local_delta = 0
+
+    # repeat the trials
+    for i in range(trials):
+        local_sendtime = time.time()
+        ble.send_command(CMD.ECHO_EXACT, string_to_send)
+
+        # wait for the message to come back
+        while True:
+            await asyncio.sleep(0.5)
+            break
+    
+    delta.append(local_delta / trials)
+
+
+                            </code>
+                        </pre>
+
+                        <p>At the end, two 1-D arrays: <code>delta, size</code>, contains the data needed to make the following plot. We can see that as the string size increases, it takes longer time to travel, which aligns with our common sense. </p>
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab2/lab2-0.PNG" alt="..." /></a>
+                        <p> Note that the measurement associated with this method only yields ~1.7 kbps, which is different from that in approach 1. Because this approach only measures time for sending 1 string, latency and other overheads may dominate over the bandwidth and lead to the disagreement. </p>
+                        
                         <h2 class="section-heading">Reliability</h2>
-                        <p> </p>
+                        <p> This task asks the question: "what happens when you send data at a higher rate from the robot to the computer? Does the computer read all the data published (without missing anything) from the Artemis board?" </p>
+                        <p> After my investigation, the answer is <mark>YES, the computer does NOT miss anything even Artemis is sending data as fast as it can!</mark>. I will explain my method below.</p>
+
+                        <p> In my setup:
+                            <ul class="list-unstyled">
+                                <ul>
+                                  <li>A command is added to modify <code>interval</code>, and <code>interval</code> is controlled to gradually decrease. </li>
+                                  <li>A callback function is called whenver the float value is updated. The callback function checks if the new value is increased by 0.5. If not, then there is a (or a few) packet(s) lost. </li>
+                                </ul>
+                            </ul>
+                            The result shows that even if <code>interval</code> is programmed to 0 (Artemis is updating as fast as it can), there are no values skipped. The PC is able to pick up every update from the Artemis. My code snippet is attached below just to show that my work is valid.
+                        </p>
+
+                        <pre>
+                            <code>
+# global variables
+prev_val = 0
+num_loss = 0
+received = 0
+
+# callback handler
+async def record_loss(uuid, byte_arr):
+    global prev_val, num_loss, received
+    received += 1
+    if (ble.bytearray_to_float(byte_arr) - prev_val) != 0.5:
+        num_loss += 1
+    prev_val = ble.bytearray_to_float(byte_arr)
+
+ble.start_notify(ble.uuid["RX_FLOAT"], record_loss)
+
+# sweep through interval sizes
+for i in range(100, -1, -5):
+    print(f'working on interval = {i}')
+    
+    prev_val = ble.receive_float(ble.uuid["RX_FLOAT"])
+    
+    # change interval
+    ble.send_command(CMD.SET_INTERVAL, str(i))
+    num_loss = 0
+
+    while True:
+        await asyncio.sleep(10)
+        break
+
+    print(f'num_loss = {num_loss}')
+
+
+                            </code>
+                        </pre>
 
                         
 
