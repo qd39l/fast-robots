@@ -58,17 +58,129 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
-                        <p> The goal of this lab is to connect the sensors to the robot, and characterize the capabilities of the sensors we are using. The robot can only move as fast as the sampling rate of the sensors, so the capabilities of the sensors basically determine the upper limit of our robot's moving speed. The robot has three sensing components: two Time-of-Flight Sensors (ToF) and an Inertial Measurement Unit (IMU). </p>
+                        <p> 
+                            <mark>WARNING: This writeup is long because the lab is long... Please be aware...</mark>
+                        </p>
 
-                        <p> When it comes to sensors, it's important to have access to the sensors' specifications as well as their API libraries. For the ToF sensor (VL53L1X), we have access to the <a href="https://cdn.sparkfun.com/assets/e/1/8/4/e/VL53L1X_API.pdf" class="link-primary">manual</a>, 
-                        the datasheet <a href="https://cdn.sparkfun.com/assets/8/9/9/a/6/VL53L0X_DS.pdf" class="link-primary">datasheet</a>, and the <a href="https://github.com/sparkfun/SparkFun_VL53L1X_Arduino_Library/blob/master/src/SparkFun_VL53L1X.h" class="link-primary">headerfile</a> for the corresponding Arduino library. 
-                        For the IMU (ICM 20948), we have access to the <a href="https://invensense.tdk.com/wp-content/uploads/2016/06/DS-000189-ICM-20948-v1.3.pdf" class="link-primary">datasheet</a>, the <a href="https://github.com/sparkfun/SparkFun_ICM-20948_ArduinoLibrary" class="link-primary">Arduino library</a>.</p>
+                        <p> 
+                            The goal of this lab is to connect the sensors to the robot, and to characterize the capabilities of the sensors we are using.
+                            Intuitively, the capabilities of our robot is limited by the capabilities of the sensors. (we don't want the robot to be randomly 
+                            crashing on things...) Therefore, the faster our sensors can sample data, the faster the robot can move. Similarly, more accurate
+                            sensors lead to better control of the robot. In this course, the robot has three external sensing components: two Time-of-Flight 
+                            Sensors (ToF) and an Inertial Measurement Unit (IMU). These sensors are provided by the course staff and they all come in the form
+                            of breakout boards. </p>
+
+                        <p> 
+                            When it comes to sensors, it's important to have access to the sensors' specifications as well as their API libraries (unless we're writing
+                            our own which we are not). For the ToF sensor (VL53L1X), we have access to the 
+                            <a href="https://cdn.sparkfun.com/assets/e/1/8/4/e/VL53L1X_API.pdf" class="link-primary">manual</a>, 
+                            the <a href="https://cdn.sparkfun.com/assets/8/9/9/a/6/VL53L0X_DS.pdf" class="link-primary">datasheet</a>, and the 
+                            <a href="https://github.com/sparkfun/SparkFun_VL53L1X_Arduino_Library/blob/master/src/SparkFun_VL53L1X.h" class="link-primary">headerfile</a>
+                            of the corresponding Arduino library. 
+                            
+                            For the IMU (ICM 20948), we have access to its 
+                            <a href="https://invensense.tdk.com/wp-content/uploads/2016/06/DS-000189-ICM-20948-v1.3.pdf" class="link-primary">datasheet</a> and the 
+                            <a href="https://github.com/sparkfun/SparkFun_ICM-20948_ArduinoLibrary" class="link-primary">Arduino library</a> for controlling this sensor.
+                        </p>
 
                         <h2 class="section-heading">Hooking up the sensors</h2>
-                        <p> All the sensors we are working with come with a breakout board. Each sensor communicates with the Artemis board via I2C protocol.  </p>
-                        
+                        <p> 
+                            All the external sensors communicate with the Artemis board via 
+                            <a href="https://en.wikipedia.org/wiki/I%C2%B2C" class="link-primary">I2C protocol</a>. 
+                            The Artemis board is the I2C controller, and the sensor components are I2C targets. (Many are more familiar with the nomenclature "master/slave", which
+                            was updated in 
+                            <a href="https://www.nxp.com/docs/en/user-guide/UM10204.pdf" class="link-primary">I2C Spec Rev. 07</a>.)
+                        </p>
 
+                        <p>
+                            Wiring between the Artemis board and the sensor boards are straight-forward. Coming from the I2C protocl, each sensor board needs at least four connections ( 
+                            <code>Vin</code>,
+                            <code>Ground</code>,
+                            <code>SDA</code>, and 
+                            <code>SCL</code>) to the Artemis controller for data exchange to work. The picture below shows the pinout of each board. I have soldered jump wire connectors
+                            onto the boards.
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab3/sensor-headers.jpg" width = 400 alt="..." /></a>
+                            <span class="caption text-muted">Pinout of sensor boards. The green one on top is the ToF sensor. The black one below is the IMU.</span>
+
+                            Notice that both boards have the four necessary signal pins available. In a "one controller, many target" setup, the same signals from each board share the same electrical node, e.g., 
+                            the <code>SDA</code> pin of the Artemis board is connected to the <code>SDA</code> pin of both ToF boards and the IMU board. 
+                        </p>
+
+                        <p>
+                            With some soldering work done, the Artemis board essentially turns into Doc Ock... See the picture below
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab3/wiring.jpg" width = 600 alt="..." /></a>
+                            <span class="caption text-muted">The Artemis board connected to the sensors.</span>
+
+                            To summarize my wiring:
+                            <ul class="list-unstyled">
+                                <ul>
+                                  <li>Some jump wire pins are soldered to a protoboard. The protoboard is used for better cable management. Connections are made on the back. </li>
+                                  <li>Both ToF sensors' <code>XSHUT</code> pins are wired to a GPIO pin (<code>PIN7</code> & <code>PIN8</code> used) on the Artemis board (with jump wire connection). This is needed because both ToF sensors 
+                                      share the same I2C address.</li>
+                                  <li>Cables are braided because I found it fun.</li>
+                                </ul>
+                            </ul>
+                            
+                            I chose jump wire connections to hopefully avoid any future re-work and improved modularity. Also note that the Artemis board has the 
+                            <a href="https://www.sparkfun.com/qwiic" class="link-primary">SparkFun Qwiic Connect System</a> for cleaner I2C connections on the board.
+
+                            
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab3/wiring-closeup1.jpg" width = 600 alt="..." /></a>
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab3/wiring-closeup2.jpg" width = 600 alt="..." /></a>
+                            <span class="caption text-muted">Shows the wiring between the Artemis board and the sensors (two perspectives).</span>
+
+                        </p>
                         
+                        <h2 class="section-heading">Software preparation</h2>
+                        Two Arduino libraries need to be installed so that we can access the API for interacting with the sensors.
+                        <ul class="list-unstyled">
+                            <ul>
+                              <li>SparkFun VL53L1X 4m laser distance sensor library <a href="https://github.com/sparkfun/SparkFun_VL53L1X_Arduino_Library" class="link-primary">(source code)</a></li>
+                              <li>SparkFun 9DOF IMU Breakout - ICM 20948 <a href="https://github.com/sparkfun/SparkFun_ICM-20948_ArduinoLibrary" class="link-primary">(source code)</a></li>
+                            </ul>
+                        </ul>
+
+                        <mark>Assuming everything is set up properly (in reality some circuit debugging efforts were involved for sure...), let's hop on to the actual lab tasks!! </mark>
+
+                        <h2 class="section-heading">Lab 3(a): Time of Flight sensors</h2>
+                        <h3 class="section-subheading">Sensing modes and sensor characterizations</h3>
+                        1. pros/cons of each sensing mode
+                        2. ToF sensor characterization (the plot)
+                        3. colors and texture tests
+
+                        Arduino code snippet: how measurements are taken
+
+                        <h3 class="section-subheading">Working with two sensors simultaneously</h3>
+                        a screen recording video demonstrating that it works
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/_V3eg8tsKSM">
+                        </iframe>
+                        <span class="caption text-muted">Demo of the <code>ECHO</code> command. The PC sends "Hi Owen!!", and the Artemis board replies "Robot says -> Hi Owen !! :)"</span>
+
+                        <h3 class="section-subheading">A1: Discussion on infrared transmission distance sensors</h3>
+
+                        <h3 class="section-subheading">A2: Timing budget</h3>
+
+                        <h3 class="section-subheading">A3: Signal and Sigma: is the measurement valid?</h3>
+
+                        <h2 class="section-heading">Lab 3(b): IMU</h2>
+
+                        <h3 class="section-subheading">IMU setup and examples</h3>
+
+                        Note the AD0_VAL definition. What does it represent, and should it be 0 or 1?
+                        Check out the change in sensor values as you rotate, flip, and accelerate the board. Explain what you see in both acceleration and gyroscope data.
+
+                        <h3 class="section-subheading">Accelerometer: pitch and roll</h3>
+
+                        <h3 class="section-subheading">Accelerometer: tapping</h3>
+
+                        <h3 class="section-subheading">Gyroscope: pitch, roll, and yaw</h3>
+
+                        <h3 class="section-subheading">Gyroscope: complimentary filter</h3>
+
+                        <h3 class="section-subheading">A1: converting magnetometer data into a yaw angle</h3>
+
 
                     </div>
                 </div>
