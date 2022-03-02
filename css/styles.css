@@ -11209,8 +11209,14 @@ header.masthead .site-heading .h1 {
 
 .section-subheading {
     font-size: 2.00rem;
-    font-weight: 700;
-    margin-top: 3.75rem;
+    font-weight: 600;
+    margin-top: 3.25rem;
+  }
+
+.section-subsubheading {
+    font-size: 1.50rem;
+    font-weight: 500;
+    margin-top: 2.75rem;
   }
 
 .caption {

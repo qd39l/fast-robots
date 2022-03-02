@@ -143,22 +143,247 @@
                         <mark>Assuming everything is set up properly (in reality some circuit debugging efforts were involved for sure...), let's hop on to the actual lab tasks!! </mark>
 
                         <h2 class="section-heading">Lab 3(a): Time of Flight sensors</h2>
-                        <h3 class="section-subheading">Sensing modes and sensor characterizations</h3>
-                        1. pros/cons of each sensing mode
-                        2. ToF sensor characterization (the plot)
-                        3. colors and texture tests
+                        <h3 class="section-subheading">I2C addresses</h3>
+                        <p>
+                            To instructors: I didn't run the Wire example since it doesn't work well... I jumped straight into the read-distance example, and completed the two sensor setup.
+                        </p>
 
-                        Arduino code snippet: how measurements are taken
+                        <h3 class="section-subheading">Sensing modes and sensor characterizations</h3>
+                        <p>
+                            The <a href="https://cdn.sparkfun.com/assets/e/1/8/4/e/VL53L1X_API.pdf" class="link-primary">API document</a> claims there are three distance modes in in section 2.5.3. However, the <a href="https://github.com/sparkfun/SparkFun_VL53L1X_Arduino_Library/blob/master/src/SparkFun_VL53L1X.h" class="link-primary">SparkFun API headerfile</a> only provides two distance modes. Therefore, we assume only two distance modes are accessible by the user (myself). The table below summarizes the pros/cons of each mode. To determine which mode to be used, I conducted some characterizations on the sensors.
+
+                            <table class="table">
+                                <thead>
+                                  <tr>
+                                    <th scope="col">Possible distance modes</th>
+                                    <th scope="col">Maximum distance</th>
+                                    <th scope="col">Benefit/comments</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <th scope="row">Short (default)</th>
+                                    <td>Up to 1.3 m</td>
+                                    <td>Better ambient immunity</td>
+                                  </tr>
+                                  <tr>
+                                    <th scope="row">Long</th>
+                                    <td>Up to 4 m</td>
+                                    <td>Maximum distance</td>
+                                  </tr>
+                                </tbody>
+                            </table>
+                            <span class="caption text-muted">A summary of the two distance modes available on VL53L1X.</span>
+                        </p>
+
+                        <h4 class="section-subsubheading">1. Distance modes and accuracy</h4>
+
+                        <p>
+                            To investigate the impact of distance modes, I conducted a sweep of measured distances and the actual distances for the two modes. The sensor module is mounted on the back of my laptop. The sensor module is facing a wall, and a ruler is used to measure the distance between itself and the wall. Measured data are streamed to the laptop through the serial port. Pictures below shows the setup.
+
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab3/distance-setup1.jpg" width = 600 alt="..." /></a>
+                            <span class="caption text-muted">The laptop is facing the wall. Artemis is connected to the laptop, and data is read on the Serial monitor. </span>
+
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab3/distance-setup2.jpg" width = 600 alt="..." /></a>
+                            <span class="caption text-muted">The sensor module is mounted on the back of the laptop. The paper is necessary because the laptop surface is conductive. (took me a while to debug) </span>
+                        </p>
+
+                        <p>
+                            Data are visualized with Matplotlib. 
+
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab3/distance-plot.png" width = 600 alt="..." /></a>
+                            <span class="caption text-muted"> Plotting the ref distance and the measured distances with two different measurement modes. </span>
+
+                            Some important findings include:
+
+                            <ul class="list-unstyled">
+                                <ul>
+                                  <li>Both short and long mode data are off for longer ref distance. This could be due to misalignments of the laptop and the wall. Just looking at the green and orange line, they are consistent.</li>
+                                  <li>The short mode is rated for up to 1.3m, but turns out it is doing okay when going up to 2m.</a></li>
+                                </ul>
+                            </ul>
+
+                            <mark>The ranging time</mark> is also measured. One sensor needs a consistent <code>87 ms</code> while another sensor only needs <code>3 ms</code>. The reason is unknown after some investigation efforts. <mark>The ranging time is independent of distance and/or distancing modes.</mark>
+                        </p>
+
+                        <h4 class="section-subsubheading">2. Lighting conditions, colors, and textures</h4>
+                        <p>
+                            The impact of lighting conditions, colors, and textures are also investigated. The sensor is placed 30 cm away from a white box. Their positions are kept the same throughout this experiment, while other factors are tuned. 50 measurements are taken, and the mean is reported. Because 30 cm is short, the short distancing mode is chosen throughout. The table blow summarizes my findings.
+
+                            <table class="table">
+                                <thead>
+                                  <tr>
+                                    <th scope="col">Distance modes</th>
+                                    <th scope="col">Color</th>
+                                    <th scope="col">Texture</th>
+                                    <th scope="col">Lighting</th>
+                                    <th scope="col">Measured Distance (mm)</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td>Short</td>
+                                    <td>White</td>
+                                    <td>Smooth</td>
+                                    <td>Ambient (LED)</td>
+                                    <td>294</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Short</td>
+                                    <td>White</td>
+                                    <td>Smooth</td>
+                                    <td>Bright Incandescent</td>
+                                    <td>297</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Short</td>
+                                    <td>White</td>
+                                    <td>Smooth</td>
+                                    <td>Dark</td>
+                                    <td>301</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Short</td>
+                                    <td>White</td>
+                                    <td>Cloth</td>
+                                    <td>Ambient (LED)</td>
+                                    <td>298</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Short</td>
+                                    <td>Blue</td>
+                                    <td>Cloth</td>
+                                    <td>Ambient (LED)</td>
+                                    <td>300</td>
+                                  </tr>
+                                </tbody>
+                            </table>
+                            <span class="caption text-muted">Table summarizing the impacts of lighting conditions, colors, and textures.</span>
+
+                            The pictures below show my setup for this experiment.
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab3/distance-setup3.jpg" width = 600 alt="..." /></a>
+                            <span class="caption text-muted"> The laptop and the box. </span>
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab3/distance-setup4.jpg" width = 600 alt="..." /></a>
+                            <span class="caption text-muted"> The incandescent light. </span>
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab3/distance-setup5.jpg" width = 600 alt="..." /></a>
+                            <span class="caption text-muted"> The box wrapped in blue cloth. </span>
+
+                            In conclusion, with the short distancing mode, the ToF sensor is not affected by lighting conditions, colors, and textures. <mark>Given these characterization results, I decide to go with the short distancing mode because a) it works for up to 2m without any obvious issues, b) it is robust against lighting conditions, colors, and textures, and c) it is the default mode so programming becomes a little bit easier.</mark>
+                        </p>
+
+                        <h4 class="section-subsubheading">Code Snippets</h4>
+                        <p>
+                            A wrapper class, <code>MyToFSensor</code>, is created to interface with the ToF sensor modules. The details of this wrapper class is attached to the end of this page. This section assumes the existance of this class and provides a high-level view of how the Artemis is set up for this experiment. The program simply gets the measurement and the time for measuring, and pipes the result to the Serial monitor for me to view.
+
+                            <pre>
+                                <code>
+// Arduino library
+#include &ltArduino.h&gt
+#include &ltWire.h&gt
+
+// my ToF sensor wrapper
+#include "tof_sensors.h"
+
+MyToFSensor my_tof;
+
+void setup(void)
+{
+    Wire.begin();
+
+    // TOF init
+    Serial.begin(115200);
+    Serial.println("ToF setup");
+    my_tof.init();
+    Serial.println("Sensor online!");
+}
+
+void loop(void)
+{
+    Serial.print("Sensor0 Distance(mm): ");
+    distance_sensor_result sensor0_result = my_tof.get_measurement(0);
+    Serial.print(sensor0_result.distance);
+    Serial.print(" Sensor0 time(ms): ");
+    Serial.print(sensor0_result.measuring_time);
+
+    Serial.print("      Sensor1 Distance(mm): ");
+    distance_sensor_result sensor1_result = my_tof.get_measurement(1);
+    Serial.print(sensor1_result.distance);
+    Serial.print(" Sensor1 time(ms): ");
+    Serial.print(sensor1_result.measuring_time);
+
+    Serial.println();
+}
+
+                                </code>
+                            </pre>
+                        </p>
+
 
                         <h3 class="section-subheading">Working with two sensors simultaneously</h3>
-                        a screen recording video demonstrating that it works
+                        <p>
+                            There are a total of 2 ToF sensor modules on the same I2C channel. They have the same I2C address, so additional setups are needed to use them simultaneously.
+                        </p>
 
-                        <iframe width="820" height="515"
-                        src="https://www.youtube.com/embed/_V3eg8tsKSM">
-                        </iframe>
-                        <span class="caption text-muted">Demo of the <code>ECHO</code> command. The PC sends "Hi Owen!!", and the Artemis board replies "Robot says -> Hi Owen !! :)"</span>
+                        <p>
+                            During sensor initialization, the <code>XSHUT</code> pin of one sensor is asserted <code>LOW</code>. Then the init method of the other sensor is called, and subsequently its I2C address is modified. After that, the <code>XSHUT</code> pin is pulled high, bring the first sensor back online with the default address. At this point, two ToF sensors have different I2C addresses, and they can be used simultaneously. Code snippet attached below.
+
+                            <pre>
+                                <code>
+pinMode(SHUTDOWN_PIN_0, OUTPUT);
+pinMode(SHUTDOWN_PIN_1, OUTPUT);
+
+digitalWrite(SHUTDOWN_PIN_0, LOW);
+digitalWrite(SHUTDOWN_PIN_1, HIGH);
+
+if (this->distanceSensor_1.begin() != 0) // Begin returns 0 on a good init
+{
+    Serial.println("Sensor 1 failed to begin. Please check wiring. Freezing...");
+    while (1)
+        ;
+}
+
+this->distanceSensor_1.setI2CAddress(0x60);
+
+digitalWrite(SHUTDOWN_PIN_0, HIGH);
+
+if (this->distanceSensor_0.begin() != 0) // Begin returns 0 on a good init
+{
+    Serial.println("Sensor 0 failed to begin. Please check wiring. Freezing...");
+    while (1)
+        ;
+}
+                                </code>
+                            </pre>
+
+                        </p>
 
                         <h3 class="section-subheading">A1: Discussion on infrared transmission distance sensors</h3>
+
+                        <p>
+                            Many distance sensors are based on infrared transmission, including IR distance sensors, LiDAR, and Time-of-Flight sensors.  
+                        </p>
+
+                        <p>
+                            IR distance sensors are cheap. Measurement is based on the reflected angle of the beam. The picture below is an intuitive picture of its working principle.
+
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab3/IR.jpg" width = 600 alt="..." /></a>
+                            <span class="caption text-muted"> IR distance sensor working principle. Source: https://os.mbed.com/forum/mbed/topic/1048/?page=1#comment-6420 </span>
+
+                            Despite its cheap price and better relibaility than an even-cheaper ultrasonic proximity sensor, it is not able to measure accurately for long distance. As the distance gets longer, the change of angle becomes smaller and undetectable. They also fail if the object is highly reflective (like a mirror).
+                        </p>
+
+                        <p>
+                            ToF sensors take advantages of the constant speed of light. The picture below shows its principle. The emitter sends a pulse of EM wave, which is reflected by the objected and later picked up by the receiver. The distance between the sensor and the object and then be calculated from the time between the emitter sends the pulse and the receiver picks up the pulse.
+
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab3/tof.png" width = 600 alt="..." /></a>
+                            <span class="caption text-muted"> ToF sensors principle. Source: https://en.wikipedia.org/wiki/Time_of_flight </span>
+
+                            ToF sensors are better in long distance sensing, and the sampling frequency is typically higher. However, this comes with the cost of being more expensive than IR proximity sensors.
+                        </p>
+
+                        <p>
+                            LiDAR uses a similar principle as ToF sensors: pulsed lasers are used, and the travelling time of the pulsed is used to calculate the distance. However, LiDAR typically uses an array of emitters and receivers, making them better in doing 3D sensing and imaging, and they are more robust than ToF sensors. This comes with the cost of being very expensive compared to other IR-based sensors. (fancy!)
+                        </p>
 
                         <h3 class="section-subheading">A2: Timing budget</h3>
 
@@ -180,6 +405,8 @@
                         <h3 class="section-subheading">Gyroscope: complimentary filter</h3>
 
                         <h3 class="section-subheading">A1: converting magnetometer data into a yaw angle</h3>
+
+                        <h2 class="section-heading">Wrapper class: MyToFSensor</h2>
 
 
                     </div>
