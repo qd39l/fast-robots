@@ -385,9 +385,142 @@ if (this->distanceSensor_0.begin() != 0) // Begin returns 0 on a good init
                             LiDAR uses a similar principle as ToF sensors: pulsed lasers are used, and the travelling time of the pulsed is used to calculate the distance. However, LiDAR typically uses an array of emitters and receivers, making them better in doing 3D sensing and imaging, and they are more robust than ToF sensors. This comes with the cost of being very expensive compared to other IR-based sensors. (fancy!)
                         </p>
 
+                        <p>
+                            Reference for writing this section:
+                            <ul class="list-unstyled">
+                                <ul>
+                                  <li>https://www.makeuseof.com/tof-and-lidar-difference/</li>
+                                  <li>https://www.seeedstudio.com/blog/2019/12/23/distance-sensors-types-and-selection-guide/</li>
+                                  <li>https://www.sparkfun.com/distance_sensor_comparison_guide</li>
+                                </ul>
+                            </ul>
+                        </p>
+
                         <h3 class="section-subheading">A2: Timing budget</h3>
 
+                        <p>
+                            Recall that earlier in this article, I reported that one sensor needs a consistent <code>87 ms</code> while another sensor only needs <code>3 ms</code> when doing a measurement. This section could shine some light on why that was the case.
+                        </p>
+
+                        <p>
+                            Each ToF sensor can be configured with a <mark>timing budget</mark> and an <mark>inter-measurement period</mark>, both in milliseconds. Timing budget is the time required by the sensor to perform one range measurement, and the inter-measurement period is the delay between two ranging operations. The minimum and maximum timing budgets are [<code>20 ms</code>, <code>1000 ms</code>]. 
+
+                            I first read out the default values.
+
+                            <pre>
+                                <code>
+Serial.print("Sensor 0 timing budget: ");
+Serial.println(this->distanceSensor_0.getTimingBudgetInMs());
+Serial.print("Sensor 0 intermeasurement period: ");
+Serial.println(this->distanceSensor_0.getIntermeasurementPeriod());
+Serial.print("Sensor 1 timing budget: ");
+Serial.println(this->distanceSensor_1.getTimingBudgetInMs());
+Serial.print("Sensor 1 intermeasurement period: ");
+Serial.println(this->distanceSensor_1.getIntermeasurementPeriod());
+                                </code>
+                            </pre>
+
+                            The sensors have the following default configurations:
+                            <table class="table">
+                                <thead>
+                                  <tr>
+                                    <th scope="col">Sensor Number</th>
+                                    <th scope="col">Intermeasurement Period (ms)</th>
+                                    <th scope="col">Timing Budget (ms)</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td>0</td>
+                                    <td>100</td>
+                                    <td>0</td>
+                                  </tr>
+                                  <tr>
+                                    <td>1</td>
+                                    <td>98</td>
+                                    <td>0</td>
+                                  </tr>
+                                </tbody>
+                            </table>
+                            Weirdly, not only both timing budgets are default to 0, the intermeasurement period are also different... despite they are the exact same module. This may (or may not) explain why one sensor's reading time is much longer than the other.
+                        </p>
+
+                        <p>
+                            Then I poked with the numbers and obtained the following numbers.
+
+                            <table class="table">
+                                <thead>
+                                  <tr>
+                                    <th scope="col">Sensor Number</th>
+                                    <th scope="col">Intermeasurement Period (ms)</th>
+                                    <th scope="col">Timing Budget (ms)</th>
+                                    <th scope="col">Measuring Time (ms)</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td>0</td>
+                                    <td>0</td>
+                                    <td>20</td>
+                                    <td>Fail to take measurements</td>
+                                  </tr>
+                                  <tr>
+                                    <td>1</td>
+                                    <td>0</td>
+                                    <td>20</td>
+                                    <td>Fail to take measurements</td>
+                                  </tr>
+                                  <tr>
+                                    <td>0</td>
+                                    <td>20</td>
+                                    <td>20</td>
+                                    <td>4</td>
+                                  </tr>
+                                  <tr>
+                                    <td>1</td>
+                                    <td>20</td>
+                                    <td>20</td>
+                                    <td>10</td>
+                                  </tr>
+                                  <tr>
+                                    <td>0</td>
+                                    <td>100</td>
+                                    <td>100</td>
+                                    <td>60</td>
+                                  </tr>
+                                  <tr>
+                                    <td>1</td>
+                                    <td>100</td>
+                                    <td>100</td>
+                                    <td>80</td>
+                                  </tr>
+                                </tbody>
+                            </table>
+
+                            I did not notice any reliability issues associated with the change of these two configurations.
+                        </p>
+
+                        <p>
+                            A longer intermeasurement period can save energy (the module goes into low-power mode when idle). However, energy is out of our concern since the robot is not designed to move for a long time. It is expected to move FAST! <mark>Therefore, I decided to set both values to <code>20 ms</code> for subsequent labs because I want the robot to be able to take samples as quickly as possible. Such that it can move and respond as fast as possible!</mark>
+                        </p>
+
                         <h3 class="section-subheading">A3: Signal and Sigma: is the measurement valid?</h3>
+                        <p>
+                            The driver uses two parameters to qualify the ranging measurement: signal and sigma. If signal or sigma are outside the limits, the ranging is flagged as invalid.
+                        </p>
+
+                        <p>
+                            Sigma is expressed in mm and is the estimation of the standard deviation of the measurement. The signal rate measurement represents the amplitude of the signal reflected from the target and detected by the device. Therefore, a small sigma and a large signal corresponds to a strong confidence in the measurement. The driver associates these two values with a tolerance limit. If signal or sigma are outside the limits, the ranging is flagged as invalid. The video below shows the results of running <code>Example3_StatusAndRate</code> of the ToF sensor library. 
+                        </p>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/qioRD9hZa0o">
+                        </iframe>
+                        <span class="caption text-muted">Demo of running <code>Example3_StatusAndRate</code>.</span>
+                        
+                        <p>
+                            In the demo video, the ToF sensor is quickly flipped around. Whenever flipping happens, there are one or two data points where the range status shows "Signal fail" or "Wrapped target fail" (no signal detected). This provides a mean for us to filter out invalid readings. In future labs, we can implement checks against these invalid signals to make our robot more robust, especially when it is moving fast.
+                        </p>
 
                         <h2 class="section-heading">Lab 3(b): IMU</h2>
 
