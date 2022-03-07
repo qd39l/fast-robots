@@ -522,25 +522,740 @@ Serial.println(this->distanceSensor_1.getIntermeasurementPeriod());
                             In the demo video, the ToF sensor is quickly flipped around. Whenever flipping happens, there are one or two data points where the range status shows "Signal fail" or "Wrapped target fail" (no signal detected). This provides a mean for us to filter out invalid readings. In future labs, we can implement checks against these invalid signals to make our robot more robust, especially when it is moving fast.
                         </p>
 
+                        <p>
+                            Software initialization of the IMU board is simple
+                        </p>
+
                         <h2 class="section-heading">Lab 3(b): IMU</h2>
 
                         <h3 class="section-subheading">IMU setup and examples</h3>
+                        
+                        <p>
+                            As shown in the <mark>Hooking up the sensors</mark> section, the IMU is connected to the Artemis board with I2C protocol, sharing the same I2C channel with two ToF sensors. The first task is to run the <mark>SparkFun Example (Example1_Basics)</mark> of the IMU breakout board.
+                        </p>
 
-                        Note the AD0_VAL definition. What does it represent, and should it be 0 or 1?
-                        Check out the change in sensor values as you rotate, flip, and accelerate the board. Explain what you see in both acceleration and gyroscope data.
+                        <p>
+                            Inside the <a href="https://github.com/sparkfun/SparkFun_ICM-20948_ArduinoLibrary/blob/main/examples/Arduino/Example1_Basics/Example1_Basics.ino" class="link-primary">Example1_Basics</a> code file in line 56, we see the subroutine <code>myICM.begin(WIRE_PORT, AD0_VAL)</code> is called to initialize the driver. <code>WIRE_PORT</code> is the I2C port, and <code>AD0_VAL</code> is defined to be 1. Looking at the comments around line 22, we see that <code>AD0_VAL</code> should be set to 1 when the ADR jumper is open, and should be set to 0 when it is closed. The ADR jumper is a physical connection on the breakout board. The picture below shows its position.
+
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab3/ADR_jumper.jpg" width = 600 alt="..." /></a>
+                            <span class="caption text-muted"> The ADR jumper labeled as <code>ADDR+1</code> </span>
+
+                            The I2C address of this IMU module can be hardware-configured as <code>0x68</code> or <code>0x69</code>, depending on whether this jumper spot is open or close. Therefore, the driver SW needs to look at <code>AD0_VAL</code> such that it uses the correct I2C address for the IMU. This can also be confirmed by looking at the <a href="https://github.com/sparkfun/SparkFun_ICM-20948_ArduinoLibrary/blob/main/src/ICM_20948.cpp" class="link-primary">source code</a> of the the class <code>ICM_20948_I2C</code>
+                        </p>
+
+                        <p>
+                            In our case, the circuit is opened. Therefore <code>AD0_VAL</code> should be set to 1 instead of the default value 0.
+                        </p>
+
+                        <p>
+                            To better understanding what the IMU is measuring, I plotted the accelerometer and gyroscope data as I rotate, flip, and accelerate the board. To make coding in <code>main</code> easier, I wrote a wrapper called <code>MyIMU</code>. Assuming its existance, it's easy to continuously read data and feed data into the serial plotter. Below is the code snippet.
+                            <pre>
+                                <code>
+// omit include statements
+
+MyIMU my_imu;
+
+void setup(void)
+{
+    Wire.begin();
+    Wire.setClock(400000);
+
+    my_imu.init();
+
+    Serial.println("Sensors online!");
+}
+
+void loop(void)
+{
+    while (!my_imu.update_data()){};
+    imu_data acc = my_imu.get_acc();
+    Serial.print("Acc (x, y, z) = ");
+    Serial.print(acc.x);
+    Serial.print(", ");
+    Serial.print(acc.y);
+    Serial.print(", ");
+    Serial.print(acc.z);
+    Serial.println();
+
+    delay(30);
+}
+                                </code>
+                            </pre>
+
+                            The video below shows how the accelerometer's (x, y, z) values change as I flip and rotate the board. In this case, the gravitational force is the only force acting on the board. Therefore, the readings change as the board is oriented differently to reflect the gravity's projection on the (x, y, z) axis. When the board is oriented "flat" and rotated around, the readings remain the same, the reason being that the gravity is acting only on the z-axis no matter how the board rotates.
+
+                            <iframe width="820" height="515"
+                            src="https://www.youtube.com/embed/FTGsjxuoPCg">
+                            </iframe>
+                            <span class="caption text-muted">Accelerometer data: flip and rotate.</span>
+
+                            The video below shows how the readings change when the board is tapped. We notice sharp spikes because the board is first accelerated because of the tap and then bounced back. 
+
+                            <iframe width="820" height="515"
+                            src="https://www.youtube.com/embed/f62eVr8c4RY">
+                            </iframe>
+                            <span class="caption text-muted">Accelerometer data: tapping.</span>
+
+                            The gyroscope measures angular velocity. When the board is flipped ro rotated, the corresponding angular velocity first increases then decreases. The same applies when the board is tapped. The video below demonstrates its behavior. Note that different from the accelerometer, the gyroscope readings are zeros when the board is not moving.
+
+                            <iframe width="820" height="515"
+                            src="https://www.youtube.com/embed/VgtkkzUtAnA">
+                            </iframe>
+                            <span class="caption text-muted">Gyroscope data: flip, rotate, and tap.</span>
+                        </p>
 
                         <h3 class="section-subheading">Accelerometer: pitch and roll</h3>
+                        <p>
+                            To see how accurate the accelerometer is, I measured the output at {-90, 0, 90} degrees pitch and roll. The edges of my table is used as guides to ensure 90 degree tilt/roll. The table below shows the results.
+
+                            <table class="table">
+                                <thead>
+                                  <tr>
+                                    <th scope="col">Pitch/Roll</th>
+                                    <th scope="col">Degrees</th>
+                                    <th scope="col">Readings (x, y, z)</th>
+                                    <th scope="col">$sqrt(x^2 + y^2 + z^2)</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td>Pitch</td>
+                                    <td>-90</td>
+                                    <td>(999.02, 12.7, 7.32)</td>
+                                    <td>999.13</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Pitch</td>
+                                    <td>0</td>
+                                    <td>(8.30, 0.49, 1105.47)</td>
+                                    <td>1105.50</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Pitch</td>
+                                    <td>90</td>
+                                    <td>(-991.70, 70.31, 75.20)</td>
+                                    <td>997.03</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Roll</td>
+                                    <td>-90</td>
+                                    <td>(-27.93, 1021.97, 57.13)</td>
+                                    <td>1023.95</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Roll</td>
+                                    <td>0</td>
+                                    <td>(-50.29, -3.91, 1104.00)</td>
+                                    <td>1105.15</td>
+                                  </tr>
+                                  <tr>
+                                    <td>Roll</td>
+                                    <td>90</td>
+                                    <td>(-186.04, 960.45, 51.27)</td>
+                                    <td>979.65</td>
+                                  </tr>
+                                </tbody>
+                            </table>
+
+                            Due to the shape of the board, it's still difficult to tell whether the board is perfectly aligning with the desired measuring angles (besides, my table could be tilted). However, for each measurement, we can tell that the gravitational force is mainly exerted on one axis only, and this is a good sanity check.
+                        </p>
+
+                        <p>
+                            Looking at the values of <code>$sqrt(x^2 + y^2 + z^2)</code>, we can tell that our accelerometer is functional, but not very accurate. The variations could be as large as ~10%. This is telling me that we may need ~10% tolerance on the accelerometer values in future labs.
+                        </p>
 
                         <h3 class="section-subheading">Accelerometer: tapping</h3>
 
+                        <p>
+                            In this task, I tapped the IMU board and plotted the frequency response of the accelerometer. The goal is to understand what frequency spectrum the "unwanted noise" have, such that we could choose a complimentary low pass filter cut off frequency in later labs to filter out these noise (assuming the robot is moving much slower than the noise). The "output" of the accelerometer is the square root of the square sum of (x, y, z) for an easier while still meaningful implementation.
+                        </p>
+
+                        <p>
+                            The accelerometer data is streamed through Serial monitor, and the raw data is copied over to Python for FFT analysis. Below is the code snippet for Arduino.
+                        </p>
+
+                        <pre>
+                            <code>
+// ----------------- Arduino Code --------------------
+// Arduino library
+
+// omit include statements
+
+MyIMU my_imu;
+unsigned long start_time;
+
+void setup(void)
+{
+    Wire.begin();
+    Wire.setClock(400000);
+
+    Serial.begin(115200);
+    while (!Serial)
+    {
+    };
+
+    Serial.println("IMU setup");
+    my_imu.init();
+
+    Serial.println("Sensors online!");
+
+    start_time = millis(); // start timer
+}
+
+void loop(void)
+{
+    while (!my_imu.update_data()){};
+    imu_data acc = my_imu.get_acc();
+    Serial.print("[");
+    Serial.print(acc.x);
+    Serial.print(", ");
+    Serial.print(acc.y);
+    Serial.print(", ");
+    Serial.print(acc.z);
+    Serial.print("],");
+
+    Serial.println();
+
+    while (millis() - start_time >= 5000){
+        Serial.print("measurement done.");
+        Serial.println();
+        delay(1000);
+    } // trap the program at 5 s
+}
+
+                            </code>
+                        </pre>
+
+                        <p>Below is the code snippet for Python.</p>
+
+                        <pre>
+                            <code>
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import pi
+from scipy.fftpack import fft
+
+time_data_raw = [
+    # put raw data here
+]
+time_data = [(x[0] ** 2 + x[1] ** 2 + x[2] ** 2) ** 0.5 for x in time_data_raw]
+seconds = 5 # how many seconds of data
+sample_rate = int(len(time_data) / seconds) # how many samples per second
+N = seconds * sample_rate
+time = np.linspace(0, seconds, N)
+frequency = np.linspace(0.0, sample_rate / 2, int(N/seconds))
+freq_data = fft(time_data)
+y = seconds/N * np.abs(freq_data[0:int(N/seconds)])
+plt.plot(frequency, y)
+plt.title('Frequency domain Signal')
+plt.xlabel('Frequency in Hz')
+plt.ylabel('Amplitude')
+plt.show()
+
+                            </code>
+                        </pre>
+                        
+                        <p>
+                            The measured time period is 5 seconds, during which the board is tapped ~10 times. The FFT output is plotted below.
+
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab3/fft_output.png" width = 600 alt="..." /></a>
+                            <span class="caption text-muted"> Accelerometer FFT output when the IMU board is tapped 10 times during a 5 second period. </span>
+
+                            Despite the 0 Hz spike, we see multiple spikes, with decreasing amplitude as the frequency grows. The spike with the lowest frequency occurs at 5 Hz, which is surprisingly low. This could be due to either a) the sampling frequency is too low and we are looking at signal aliasing, or b) the oscillations of the board after tapping is falling into lower frequency ranges. (I acknowledge these hypothesis could be wrong as I am not a signal expert) This preliminary assessment really did not give me much insight of what cut-off frequency the low-pass filter should have, but in future labs I would start with a cut-off frequency of ~30 Hz, and tune it depending on the speed of the robot and the actual frequencies of the noise.
+                        </p>
+
+                        <p>
+                            Note that the internal low-pass filter of the accelerometer is programmed to have a bandwidth of 473 Hz and the Nyquist bandwidth to be 499 Hz. Therefore, this result should have nothign to do with the misprogramming of the internal low-pass filter. (But well... who knows! It's our job as engineers to keep debugging!)
+                        </p>
+
+                        <p>
+                            As for how the choice of cut-off frequency affects the output for a low pass filter, a lower cut-off frequency obviously will make sure the output changes slower than a higher cut-off frequency choice.
+                        </p>
+
                         <h3 class="section-subheading">Gyroscope: pitch, roll, and yaw</h3>
+
+                        <p>
+                            The gyroscope measures angular velocity. Therefore, given the initial pitch, roll, and yaw angles, we can compute the pitch, roll, and yaw angles later in time from the gyroscope. Given an angle in time step <code>n</code>, we can do <code>theta_n+1 = theta_n + gyro_n * dt</code>, where <code>dt</code> is the time elapsed between the current and the previous measurement. Note that the <code>+</code> sign on the RHS of the equation could be <code>-</code> depending on the configuration of the board. Code snippet is attached below. The software uses the initial readings of the accelerometer as the initial orientation. At each later time step, it calculates the pitch and roll from both the accelerometer data and the gyroscope data, and outputs the difference.
+
+                            <pre>
+                                <code>
+// Arduino library
+// omit include statements
+
+MyIMU my_imu;
+bool first_time_running = true;
+imu_data current_angles;
+unsigned long last_measured_time;
+
+void setup(void)
+{
+    Wire.begin();
+    Wire.setClock(400000);
+
+    Serial.begin(115200);
+
+    Serial.println("IMU setup");
+    my_imu.init();
+
+    Serial.println("Sensors online!");
+}
+
+void loop(void)
+{
+    while (!my_imu.update_data())
+    {
+    };
+
+    if (first_time_running)
+    {   // take values from the accelerometer as the initial pitch, roll, and yaw
+        first_time_running = false;
+        imu_data acc = my_imu.get_acc();
+        current_angles.y = atan(acc.x / acc.z) * 180 / 3.14159; // pitch
+        current_angles.x = atan(acc.y / acc.z) * 180 / 3.14159; // roll
+        last_measured_time = micros();
+    }
+    else
+    {
+        // compute acc pitch/roll
+        imu_data acc = my_imu.get_acc();
+        float acc_pitch = atan(acc.x / acc.z) * 180 / 3.14159;
+        float acc_roll = atan(acc.y / acc.z) * 180 / 3.14159;
+        Serial.print("Acc (pitch, roll) = ");
+        Serial.print(acc_pitch);
+        Serial.print(", ");
+        Serial.print(acc_roll);
+
+        // compute gyr pitch/roll
+        imu_data gyr = my_imu.get_gyr();
+        unsigned long elapsed_time = micros() - last_measured_time;
+        last_measured_time = micros();
+        current_angles.y = current_angles.y - float(elapsed_time) / 1000000 * gyr.y;
+        current_angles.x = current_angles.x + float(elapsed_time) / 1000000 * gyr.x;
+        
+        Serial.print("    Gyr (pitch, roll) = ");
+        Serial.print(current_angles.y);
+        Serial.print(", ");
+        Serial.print(current_angles.x);
+
+        // compute acc/gyr difference
+        Serial.print("    Diff (pitch, roll) = ");
+        Serial.print(current_angles.y - acc_pitch);
+        Serial.print(", ");
+        Serial.print(current_angles.x - acc_roll);
+
+        // show time elapsed
+        Serial.print("    time_elapsed (ms) = ");
+        Serial.print(elapsed_time / 1000);
+    }
+
+    Serial.println();
+    delay(100); // modify to change sampling frequency
+}
+
+                                </code>
+                            </pre>
+                            The video below shows the difference output with the fastest sampling rate (<code>time step delay = 1 ms</code>).
+
+                            <iframe width="820" height="515"
+                            src="https://www.youtube.com/embed/Bg6LNFrmArw">
+                            </iframe>
+                            <span class="caption text-muted">Difference between Acc and Gyr Pitch/Roll reading with delay = 1 ms.</span>
+
+                            From the video, we can see that pitch/roll data calculated from the gyroscope slowly drifts away. This is unavoidable due to the accumulation method for calculating pitch/roll from gyroscope readings. We can also see that when the board is flipped over 90 degrees, the difference has a sudden leap. The reason being <code>atan()</code> only returns within the range of -90 and 90 degrees, while the gyroscope data can go beyond 90 degrees. Futher heuristics could take care of this issue.
+
+                            <iframe width="820" height="515"
+                            src="https://www.youtube.com/embed/e-eaGQIlYEQ">
+                            </iframe>
+                            <span class="caption text-muted">Difference between Acc and Gyr Pitch/Roll reading with delay = 10 ms.</span>
+
+                            <iframe width="820" height="515"
+                            src="https://www.youtube.com/embed/2py7rLHkAAE">
+                            </iframe>
+                            <span class="caption text-muted">Difference between Acc and Gyr Pitch/Roll reading with delay = 100 ms.</span>
+
+                            The two videos below show how longer sampling frequencies could impact the accuracy. I see that delay of 10 ms seems to perform better than both 1 ms and 100 ms. We could not use 100 ms in the actual robot because that is too slow, but 1 ms seems to be too noisy and it drifts away quicker. Note that this is only preliminary results, and the actual robot would need further tuning to achieve good performance.
+
+                        </p>
 
                         <h3 class="section-subheading">Gyroscope: complimentary filter</h3>
 
+                        <p>
+                            From all the previous experiments, we can conclude that a) the accelerometer is very susceptible to noise, but it does not have the "drifting" issue that the gyroscope is experiencing, and b) the gyroscope is more robust against noise and sudden moves, but it has the drifting issue due to the integrating method for calculating pitch and roll. Therefore, we need a figure out a way to combine these two. A basic complimentary filter would use the following method:
+                        </p>
+
+                        <p><code>theta = (theta + gyr_reading * dt)*(1 - alpha) + acc_reading * alpha</code></p>
+
+                        <p>Where <code>alpha</code> is a hyperparameter. <code>alpha = 1</code> would make <code>theta</code> behave exactly like the calculation from accelerometer, and <code>alpha = 0</code> would make it exactly the same as the gyroscope integrated readings. With an appropriate <code>alpha</code>, we can make the calculation of pitch/roll robust against both drifting and noise. I tested with <code>alpha = 0.8</code> and <code>alpha = 0.2</code></p>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/KUl8s7UiG1I">
+                        </iframe>
+                        <span class="caption text-muted">Pitch/roll with complimentary filter. Alpha = 0.8</span>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/ZKetu7A8zUc">
+                        </iframe>
+                        <span class="caption text-muted">Pitch/roll with complimentary filter. Alpha = 0.2</span>
+
+                        <p>
+                            From the video, we see that with a larger <code>alpha</code>, the readings are more susceptible to random noise and quick movements, and a smaller <code>alpha</code> yields a more desirable result where noise is less noticable. Both <code>alpha</code> is capable of overcoming the drifting issue. Therefore, I would like to conclude that <code>alpha <= 0.2</code> is the range we will be looking at in future labs.
+                        </p>
+
                         <h3 class="section-subheading">A1: converting magnetometer data into a yaw angle</h3>
 
-                        <h2 class="section-heading">Wrapper class: MyToFSensor</h2>
+                        <p>
+                            Turns out the magnetometer data can be used to determine the magnetic north orientation and calculate the yaw! (Not so much of a surprise, right?) Here is the formula provided by the instructor team:
+                            
+                            <pre>
+                                <code>
+xm = myICM.magX()*cos(pitch) - myICM.magY()*sin(roll)*sin(pitch) + myICM.magZ()*cos(roll)*sin(pitch);
+ym = myICM.magY()*cos(roll) + myICM.magZ()*sin(roll_rad); 
+yaw = atan2(ym, xm);
+                                </code>
+                            </pre>
 
+                            With a little adaptation, I integrated into my code:
+                            <pre>
+                                <code>
+float pitch = current_angles.y * 3.14159 / 180;
+float roll = current_angles.x* 3.14159 / 180;
+imu_data mag = my_imu.get_mag();
+float xm = mag.x*cos(pitch) - mag.y*sin(roll)*sin(pitch) + mag.z*cos(roll)*sin(pitch);
+float ym = mag.y*cos(roll) + mag.z*sin(roll); 
+float yaw = atan2(ym, xm);
+Serial.print("Yaw = ");
+Serial.print(yaw);
+                                </code>
+                            </pre>
+
+                            Two videos below demontrate its functionality. The first video shows that the magnetic North measured by the magnetometer is roughly the same as the geographic North, with the yaw changing as the orientation rotates. The second video shows that the yaw angle reading is robust against small changes in pitch.
+
+                            <iframe width="820" height="515"
+                            src="https://www.youtube.com/embed/HOA9C4QvOgA">
+                            </iframe>
+                            <span class="caption text-muted">Using the magnetometer readings to determine magnetic North.</span>
+
+                            <iframe width="820" height="515"
+                            src="https://www.youtube.com/embed/2fdUli-RsyU">
+                            </iframe>
+                            <span class="caption text-muted">The calculated yaw angle is robust against change in pitch.</span>
+
+                            Maybe it's also possible to combine magnetometer data calculated yaw with gyroscope readings to be used in future labs? (I don't know!) But to conclude this (very, very long) lab, I am attaching my sensor wrapper classes below.
+                        </p>
+
+
+                        <h2 class="section-heading">Wrapper class: MyToFSensor</h2>
+                        <p>
+                            I made a wrapper to interface with the ToF sensors. Available methods include <code>MyToFSensors.init()</code> and <code>MyToFSensors.get_measurement()</code>, which are both self-explanatory.
+                        </p>
+
+                        <pre>
+                            <code>
+#ifndef TOF_SENSORS_END
+#define TOF_SENSORS_END
+
+// omit include statements
+// Optional interrupt and shutdown pins.
+#define SHUTDOWN_PIN_0 8
+#define SHUTDOWN_PIN_1 7
+
+typedef struct
+{
+    unsigned long measuring_time = 0;
+    int distance = 0;
+} distance_sensor_result;
+
+class MyToFSensors
+{
+public:
+    MyToFSensors(){};
+
+    /**
+     * @brief 
+     * 
+     * @param distance_mode 0 for short mode and 1 for long mode
+     * @param budget timing budget in ms
+     * @param period intermeasurement period in ms
+     */
+    void init(unsigned distance_mode = 0, unsigned int budget = 20, unsigned int period = 20)
+    {
+        this->two_sensor_setup(distance_mode, budget, period);
+        this->start_ranging();
+    }
+
+    /**
+     * @brief Get the measurement object
+     *
+     * @param sensor_idx
+     * @return distance_sensor_result
+     */
+    distance_sensor_result get_measurement(int sensor_idx)
+    {
+        return sensor_idx ? this->read_distance(this->distanceSensor_1) : this->read_distance(this->distanceSensor_0);
+    }
+
+    void start_ranging()
+    {
+        this->distanceSensor_0.startRanging();
+        this->distanceSensor_1.startRanging();
+    }
+
+private:
+    /**
+     * @brief 
+     * 
+     * @param distance_mode 0 for short mode and 1 for long mode
+     * @param budget timing budget in ms
+     * @param period intermeasurement period in ms
+     */
+    void two_sensor_setup(unsigned distance_mode, unsigned int budget, unsigned int period)
+    {
+        pinMode(SHUTDOWN_PIN_0, OUTPUT);
+        pinMode(SHUTDOWN_PIN_1, OUTPUT);
+
+        digitalWrite(SHUTDOWN_PIN_0, LOW);
+        digitalWrite(SHUTDOWN_PIN_1, HIGH);
+
+        if (this->distanceSensor_1.begin() != 0) // Begin returns 0 on a good init
+        {
+            Serial.println("Sensor 1 failed to begin. Please check wiring. Freezing...");
+            while (1)
+                ;
+        }
+
+        this->distanceSensor_1.setI2CAddress(0x60);
+
+        digitalWrite(SHUTDOWN_PIN_0, HIGH);
+
+        if (this->distanceSensor_0.begin() != 0) // Begin returns 0 on a good init
+        {
+            Serial.println("Sensor 0 failed to begin. Please check wiring. Freezing...");
+            while (1)
+                ;
+        }
+
+        // set distance mode here
+        if (distance_mode)
+        {
+            this->distanceSensor_0.setDistanceModeLong();
+            this->distanceSensor_1.setDistanceModeLong();
+        }
+        else
+        {
+            this->distanceSensor_0.setDistanceModeShort();
+            this->distanceSensor_1.setDistanceModeShort();
+        }
+
+        Serial.print("Sensor 0 distance mode: ");
+        Serial.println(this->distanceSensor_0.getDistanceMode());
+        Serial.print("Sensor 1 distance mode: ");
+        Serial.println(this->distanceSensor_1.getDistanceMode());
+
+        // set timing budget here
+        this->distanceSensor_0.setTimingBudgetInMs(budget);
+        this->distanceSensor_0.setIntermeasurementPeriod(period);
+        this->distanceSensor_1.setTimingBudgetInMs(budget);
+        this->distanceSensor_1.setIntermeasurementPeriod(period);
+
+        Serial.print("Sensor 0 timing budget: ");
+        Serial.println(this->distanceSensor_0.getTimingBudgetInMs());
+        Serial.print("Sensor 0 intermeasurement period: ");
+        Serial.println(this->distanceSensor_0.getIntermeasurementPeriod());
+        Serial.print("Sensor 1 timing budget: ");
+        Serial.println(this->distanceSensor_1.getTimingBudgetInMs());
+        Serial.print("Sensor 1 intermeasurement period: ");
+        Serial.println(this->distanceSensor_1.getIntermeasurementPeriod());
+    }
+
+    /**
+     * @brief
+     *
+     * @param distanceSensor
+     * @return distance_sensor_result
+     */
+    distance_sensor_result read_distance(SFEVL53L1X &distanceSensor)
+    {
+        unsigned long start = millis();
+
+        while (!distanceSensor.checkForDataReady())
+        {
+            delay(1);
+        }
+        int distance = distanceSensor.getDistance(); // Get the result of the measurement from the sensor
+        distanceSensor.clearInterrupt();
+        unsigned long stop = millis() - start;
+
+        distance_sensor_result result;
+        result.measuring_time = stop;
+        result.distance = distance;
+
+        return result;
+    }
+
+    SFEVL53L1X distanceSensor_0;
+    SFEVL53L1X distanceSensor_1;
+};
+
+#endif
+                            </code>
+                        </pre>
+                        
+                        <h2 class="section-heading">Wrapper class: MyIMU</h2>
+                        <p>
+                            I also wrote a wrapper for the IMU. Methods include <code>MyIMU.init()</code>, <code>MyIMU.update_data()</code>, and <code>MyIMU.get_{acc/gyr/mag}()</code>. These methods are self-explanatory. Features to be added: calculate pitch/roll/yaw when needed.
+                        </p>
+
+                        <pre>
+                            <code>
+#ifndef MY_IMU
+#define MY_IMU
+
+// acc (mg), gyr (DPS), mag (uT)
+
+// omit include statements
+
+typedef struct
+{
+    float x = 0;
+    float y = 0;
+    float z = 0;
+} imu_data;
+
+class MyIMU
+{
+public:
+    MyIMU(){};
+
+    void init()
+    {
+        // necessary init steps
+        bool initialized = false;
+        while (!initialized)
+        {
+
+            myICM.begin(Wire, 0);
+
+            Serial.print(F("Initialization of the sensor returned: "));
+            Serial.println(myICM.statusString());
+            if (myICM.status != ICM_20948_Stat_Ok)
+            {
+                Serial.println("Trying again IMU init...");
+                delay(500);
+            }
+            else
+            {
+                initialized = true;
+            }
+        }
+
+        // data scale
+        // Set full scale ranges for both acc and gyr
+        ICM_20948_fss_t myFSS; // This uses a "Full Scale Settings" structure that can contain values for all configurable sensors
+
+        myFSS.a = gpm16; // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
+                            // gpm2
+                            // gpm4
+                            // gpm8
+                            // gpm16
+
+        myFSS.g = dps250; // (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
+                            // dps250
+                            // dps500
+                            // dps1000
+                            // dps2000
+
+        myICM.setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS);
+        if (myICM.status != ICM_20948_Stat_Ok)
+        {
+            Serial.print(F("setFullScale returned: "));
+            Serial.println(myICM.statusString());
+        }
+
+        // low-pass filter
+        // Set up Digital Low-Pass Filter configuration
+        ICM_20948_dlpcfg_t myDLPcfg;    // Similar to FSS, this uses a configuration structure for the desired sensors
+        myDLPcfg.a = acc_d473bw_n499bw; // (ICM_20948_ACCEL_CONFIG_DLPCFG_e)
+                                        // acc_d246bw_n265bw      - means 3db bandwidth is 246 hz and nyquist bandwidth is 265 hz
+                                        // acc_d111bw4_n136bw
+                                        // acc_d50bw4_n68bw8
+                                        // acc_d23bw9_n34bw4
+                                        // acc_d11bw5_n17bw
+                                        // acc_d5bw7_n8bw3        - means 3 db bandwidth is 5.7 hz and nyquist bandwidth is 8.3 hz
+                                        // acc_d473bw_n499bw
+
+        myDLPcfg.g = gyr_d361bw4_n376bw5; // (ICM_20948_GYRO_CONFIG_1_DLPCFG_e)
+                                            // gyr_d196bw6_n229bw8
+                                            // gyr_d151bw8_n187bw6
+                                            // gyr_d119bw5_n154bw3
+                                            // gyr_d51bw2_n73bw3
+                                            // gyr_d23bw9_n35bw9
+                                            // gyr_d11bw6_n17bw8
+                                            // gyr_d5bw7_n8bw9
+                                            // gyr_d361bw4_n376bw5
+
+        myICM.setDLPFcfg((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myDLPcfg);
+        if (myICM.status != ICM_20948_Stat_Ok)
+        {
+            Serial.print(F("setDLPcfg returned: "));
+            Serial.println(myICM.statusString());
+        }
+    }
+
+    bool update_data()
+    {
+        if (myICM.dataReady())
+        {
+            myICM.getAGMT();
+            this->store_data(); // store data in the class structs
+            return true;
+        }
+        return false;
+    }
+
+    imu_data get_acc()
+    {
+        return acc;
+    }
+
+    imu_data get_gyr()
+    {
+        return gyr;
+    }
+
+    imu_data get_mag()
+    {
+        return mag;
+    }
+
+private:
+    void store_data()
+    {
+        // accelerometer
+        acc.x = myICM.accX();
+        acc.y = myICM.accY();
+        acc.z = myICM.accZ();
+
+        // gyrometer
+        gyr.x = myICM.gyrX();
+        gyr.y = myICM.gyrY();
+        gyr.z = myICM.gyrZ();
+
+        // magnotometer
+        mag.x = myICM.magX();
+        mag.y = myICM.magY();
+        mag.z = myICM.magZ();
+    }
+
+    imu_data acc;
+    imu_data gyr;
+    imu_data mag;
+    ICM_20948_I2C myICM;
+};
+
+#endif /* MY_IMU */
+                                
+                            </code>
+                        </pre>
 
                     </div>
                 </div>
