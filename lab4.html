@@ -58,12 +58,129 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
+                        <p>
+                            Before we take apart the car and swap the cheap PCB inside with our elegant Artemis board, we can use the remote control that came with the car to understand the capabilities/characteristics of the hardware. In this lab, I will conduct a couple of tests to gather information and data about the hardware. I will also reason why a particular test or the data gathered may/will be necessary or helpful for future labs when the car becomes autonomous.
+                        </p>
+
+                        <p>
+                            The instructor team provides a couple of testing ideas, which can be categorized into two aspects: a simple measurement, and one that needs experimental setups. Since I'm an honorable (haha) 5000 level student, I will need to do at least 2 measurements that requres experimental setups.
+                        </p>
+
+                        <h2 class="section-heading">Dimensions, weight, and battery life</h2>
+
+                        <h3 class="section-subheading">Why this is important</h3>
                         
-                        <h2 class="section-heading">testing1</h2>
-                        <h2 class="section-heading">testing2</h2>
-                        <h2 class="section-heading">testing3</h2>
+                        <p>
+                            The final robot we are building is a stunt robot. We don't know yet what stunts we want it to perform / it can perform, but knowing the dimensions and the weight of the robot helps us filter out stunts that the robot absolutely cannot perform. Before implementing a stunt, I would like to do some back-of-envelope calculations to make sure it is doable by the robot before I waste time implementing and finally find out it simply wouldn't work given the robot's dimensions and weight. A simplified example being that if I want to robot to climb over an obstacle, and the obstacle is too large given the robot's physical dimension, then there is no way to overcome this issue. Furthermore, the dimensions also determine things like the turning radius, which will definitely be helpful in future labs.
+                        </p>
+
+                        <p>
+                            Measuring the dimensions and the weight of the robot is straightforward. The dimensions are measured with a ruler, and the weight is measured with a kitchen scale. I am attaching photos below to show how the numbers are measured, and the numbers are attached on a table below.
+
+                            <table class="table">
+                                <thead>
+                                  <tr>
+                                    <th scope="col">Measuring...</th>
+                                    <th scope="col">Dimension (cm)</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td>total length</td>
+                                    <td>20</td>
+                                  </tr>
+                                  <tr>
+                                    <td>total width</td>
+                                    <td>14</td>
+                                  </tr>
+                                  <tr>
+                                    <td>total height / wheel diameter</td>
+                                    <td>8</td>
+                                  </tr>
+                                  <tr>
+                                    <td>wheel axis distance</td>
+                                    <td>10</td>
+                                  </tr>
+                                </tbody>
+                            </table>
+                        </p>
+                        
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab4/lab4-dimension1.jpg" width = 300 alt="..." /></a>
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab4/lab4-dimension2.jpg" width = 300 alt="..." /></a>
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab4/lab4-dimension3.jpg" width = 300 alt="..." /></a>
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab4/lab4-dimension4.jpg" width = 300 alt="..." /></a>
+                        <span class="caption text-muted">Measuring the dimensions of the robot with a ruler.</span>
+
+                        <p>
+                            The robot's weight is then measured to be 514 grams including the original PCB and the 850 mAh battery.
+                        </p>
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab4/lab4-weight.jpg" width = 400 alt="..." /></a>
+                        <span class="caption text-muted">Measuring the weight of the robot with a kitchen scale.</span>
+                        
+                        <p>
+                            The battery life of the robot is also undoubtedly important. For short demonstration of stunts, the battery life would not matter much. However, when we are testing and tuning the robot, we will run out of battery life. Knowing the battery life in advance could help me plan our testing and development rhythms ahead of time and boost my productivity.
+                        </p>
+
+                        <p>
+                            The 850 mAh battery is first fully charged and plugged into the robot. The testing has a combination of 1) full speed testing with the robot turning around, and 2) casucal testing where I just play with the robot. The battery lasted about <code>11.5</code> minutes.
+                        </p>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/KLj6zdMRbT0">
+                        </iframe>
+                        <span class="caption text-muted">Running the robot at full speed to exhaust the battery.</span>
+
+                        <p>
+                            When the robot runs out of battery life, one could clearly tell that it is struggling.
+
+                            <iframe width="820" height="515"
+                            src="https://www.youtube.com/embed/MYueHBdr_CU">
+                            </iframe>
+                            <span class="caption text-muted">The robot struggles when running out of battery.</span>
+                        </p>
+
+                        <h2 class="section-heading">Acceleration curve when going straight</h2>
+                        
+                        <p>
+                            For these characterizations, I believe it is important to push the robot to its limit such that we know its best capabilities. One important aspect is acceleration. The robot moves because of the motors. Knowing the acceleration would give me some insight of how fast (at most) the motors can move the robot around, which determines what stunts the robot could perform. The acceleration provided by the motor could also be speed-dependent and it is interesting to see.
+                        </p>
+
+                        <p>
+                            Experiment setup is simple. The battery is fully charged. The Artemis board is attached to the robot via hot glue. There are two batteries, each powering either the Artemis board or the robot motors. The Artemis board continuously streams accelerometer data to my PC via Bluetooth, and data is visualized on the PC with Python.
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab4/acc-setup.jpg" width = 400 alt="..." /></a>
+                        <span class="caption text-muted">The Artemis board attached to the outside of the robot.</span>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/D1yc6wUtoBk">
+                        </iframe>
+                        <span class="caption text-muted">Measuring acceleration when going straight.</span>
+
+                        <p>
+                            During measurement, the robot goes straight with maximum power, and I let it crash into a yoga mat to stop itself. The final acceleration plot is shown below.
+                        </p>
 
                         
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab4/acceleration.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted">Plot of measured robot acceleration.</span>
+
+                        <p>
+                            Looking at the plot (especially the x-axis because the robot is going straight), we can see that the maximum acceleration of the robot is around ~4000 mg. This is very fast and is definitely faster than I have expected. We can also notice an increasing trend of acceleration as the robot picks up speed. If there is a longer lane, we will probably see decreasing acceleration over time as well.
+                        </p>
+                        
+                        <h2 class="section-heading">Maximum angular speed</h2>
+
+                        <p>
+                            Similar to the reason why measuring acceleration is important, the maximum angular speed determines how fast the robot can turn and therefore it is important as well. The experiment setup is similar to measuring the acceleration, except that this time the robot streams gyroscope data instead of accelerometer data, and the robot turns around in full speed instead of going straight. The final angular speed plot is shown below.
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab4/ang-speed.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted">Plot of measured angular speed from gyroscope when the robot is turning around.</span>
+
+                        <p>
+                            The gyroscope measurement is less prone to error and fairly consistent when we are looking at the z-axis readings. We see approximately 240 degrees/second of rotation speed when the robot is rotating, meaning that the robot is able to spin 2/3 of a circle every second! It is totally capable of moving fast in future labs!
+                        </p>
 
                     </div>
                 </div>
