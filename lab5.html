@@ -146,22 +146,175 @@ stop(right, 255);
 
                         <h2 class="section-heading">Explore PWM lower limit for turning the motors</h2>
 
+                        <p>
+                            Technically, the range of PWM (that is the <code>analogWrite()</code> function in the Arduino library) could range from 0 to 255. However, motor speed is not linear with respect to PWM input. When the robot is on the ground and at rest, it needs certain amount of current passing through such that the motors have enough torque to start spinning. This is to say, there is a lower limit PWM value, below which the motors will struggle and will not move the car. There should also be an upper limit, above which the motor will be over-powered (over heat and potentially destruction) or the robot becomes not controllable (sensor sampling cannot keep up). The upper limit is left to be investigated in future labs when we get into feedback control. 
+                        </p>
+
+                        <p>
+                            Test for the lower limit is simple. The Artemis board is programmed to move the robot forward with a hardcoded PWM value, <code>LIMIT_LOW</code>. A value of <code>LIMIT_LOW</code> is assumed, and the robot is put on ground for test. If the robot moves, then we lower <code>LIMIT_LOW</code>. Otherwise, we raise <code>LIMIT_LOW</code>. In my case, I followed a binary search methodology, and finally found <code>LIMIT_LOW = 40</code>. In the video below, <code>LIMIT_LOW = 37</code>, and the motors make a struggling sound. 
+                        </p>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/cUuupas6DQw">
+                        </iframe>
+                        <span class="caption text-muted">Robot going forward with PWM = 37.</span>
+
+                        <p>
+                            When <code>LIMIT_LOW</code> is raised to <code>40</code>, the robot starts moving slowly as shown in the video below.
+                        </p>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/omhU9-zFYrI">
+                        </iframe>
+                        <span class="caption text-muted">Robot going forward with PWM = 40.</span>
+
+                        <p>
+                            Note that <code>LIMIT_LOW</code> is environment dependent: it will be more difficult to move the robot forward on a carpet floor. In reality, we probably want to set <code>LIMIT_LOW = 50</code> to prevent the robot from getting stuck.
+                        </p>
 
                         <h2 class="section-heading">Going a straight line</h2>
 
+                        <p>
+                            Even if the left and right motors are given the same PWM input, the wheels may not have the same torque or speed. This could be due to:
+
+                            <ul class="list-unstyled">
+                                <ul>
+                                    <li>Center of mass of the robot is not aligned to the center of the robot.</li>
+                                    <li>Two motors may have slightly different characteristics.</li>
+                                    <li>The wheels may not be perfectly aligned.</li>
+                                    <li>Two motor drivers have slightly different characteristics.</li>
+                                </ul>
+                            </ul>
+                        </p>
+
+                        <p>
+                            To demonstrate that my robot (after calibration) can move in a fairly straight line, I put a 2 meter ruler on the ground. The robot starts centered on the ruler, and still partially overlap with the ruler at the end after it has travelled over 2 meters.
+                        </p>
+
+                        <p>
+                            My target PWM range for this test is between PWM = 60 and PWM = 120, and my preliminary calibration strategy is to add a constant offset to the motor that is falling behind. A constant offset would make the calibration independent of the PWM value. This calibration strategy eventually worked out with adding <code>PWM = 5</code> offset to the right motor. 
+                        </p>
+
+                        <p>
+                            Below are two videos showing my robot travelling in a straight line with <code>PWM = 60</code> and <code>PWM = 120</code>. Beyond <code>PWM = 120</code>, it becomes difficult to control where the robot stops. (open loop control becomes insufficient to protect the robot from destruction)
+                        </p>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/KxGVUKeryWE">
+                        </iframe>
+                        <span class="caption text-muted">Robot going in a straight line with PWM = 60 (with calibration).</span>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/yXYNECQtO9g">
+                        </iframe>
+                        <span class="caption text-muted">Robot going in a straight line with PWM = 120 (with calibration).</span>
+
 
                         <h2 class="section-heading">Open loop control</h2>
+                        <p>
+                            Now it's time to add some pre-programmed moves to the robot to demonstrate the ultimate goal of this lab: open loop control. The robot simply executes the hardcoded moves. My open loop control moves are not especially impressive, but I think it's still pleasing to look at... Here is a video on it!
+                        </p>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/VbyY7K3umis">
+                        </iframe>
+                        <span class="caption text-muted">Robot open loop control with forward, turns, reverse (repeat 2x).</span>
+
+                        <p>
+                            Here is the programmed moves of the robot (corresponding to the moves on the video):
+                            <pre>
+                                <code>
+my_motors.car_straight(200);
+delay(500);
+
+my_motors.car_turn(100, -100); // center and turn right
+delay(800);
+
+my_motors.car_turn(150, 200); // forward and turn left
+delay(800);
+
+my_motors.car_straight(-100); // backup - partially fliped
+delay(400);
+
+my_motors.car_straight(100); // move forward
+delay(200);
+                                </code>
+                            </pre>
+
+                        </p>
 
                         <h2 class="section-heading">A1: analogWrite frequency</h2>
 
-                        <h2 class="section-heading">A2: </h2>
+                        <p>
+                            We want to take a look at the frequency of analogWrite and think about whether this frequency is adequately fast for our robot. To measure the frequency, a PWM pin on the Artemis board is programmed to yield <code>PWM = 10</code> signal. The corresponding pin is hooked to an oscillascope. I use Digilent's Analog Discovery 2. It can only do 100MS/s and 30MHz bandwidth so it's a beginner scope, but it's good enough for this application. The picture below shows the experiment setup.
+                        </p>
 
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab5/PWM-measure.jpg" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> An Artemis PWM pin connected to an oscillascope (Digilent Analog Discovery 2).</span>
+
+                        <p>
+                            The picture below shows the waveform shown on the oscillascope. 
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab5/pwm-waveform.PNG" width = 1000 alt="..." /></a>
+                        <span class="caption text-muted"> PWM=10 measurement on an oscillascope. Period is approximately 5.5 ms.</span>
+
+                        <p>
+                            The interval between two pulses is approximately 5.5 ms, which translates to <mark>181 Hz</mark>. We can think of this as the fastest rate we can control the motors. Even if we modify the PWM duty cycle at a rate faster than 181 Hz, the MCU's timer is not able to pick up the change. However, 5.5 ms is still much shorter time than the sampling rate of the ToF sensors (which takes at least ~20 ms). I would like to argue that if we control the robot solely based on ToF sensor readings, the PWM signal frequency is good enough as it is now.  
+                        </p>
+
+                        <p>
+                            However, if we integrate readings from the IMU, or if we integrate Kalman filter into our control system, then we may be able to generate control outputs faster than 181 Hz. In this situation, the current PWM signal is not fast enough to respond to our control outputs, and it becomes a bottleneck blocking us from getting the robot respond faster.
+                        </p>
+
+                        <p>
+                            If we can generate control outputs faster than 181 Hz, then we could benefit from manually tuning the MCU's timers to generate a faster PWM signal. This could allow us to have the robot respond faster, and potentially lead to the capability of doing difficult stunts that require very fast responses and controls of the robot. However, I would refrain from changing timer configurations until it is clear that this is necessary. Manually tuning the timer configurations would need me to dig into the Arduino library's source code and the MCU's specsheet, which could be a rabbit hole if I don't know for certain what I am doing...
+                        </p>
+
+                        <h2 class="section-heading">A2: speed ramping up and down. Measure speed</h2>
+
+                        <p>
+                            This task asks me to write a program that ramps up and down in speed slowly, and reporting the values to my computer using Bluetooth. With this set up, I will be able to test out what range of speeds I can achieve.
+                        </p>
+
+                        <p>
+                            I wrote a program to accelerate the robot straight forward with PWM = 100 for 1.25 seconds, and then brake with PWM = 150 for 2.5 seconds. The robot will be running towards a wall. During its movement, the robot tries to take a ToF measurement every 50 ms and records the value in a local array. The robot also records the time elapsed when it is taking measurements. At the end of the program, the robot transfers the ToF readings and the time elapsed to my computer via Bluetooth. There will be 25 ToF samples during which the robot is accelerating, and 50 ToF samples during which the robot is braking, adding up to 75 samples. Based on the time elapsed, we can also calculate the average time interval between two ToF measurements. Based on the rate the ToF readings change and the time interval between measurements, we can calculate the speed of the robot.
+                        </p>
+
+                        <p>
+                            The video below shows the robot ramping up and slowing down in speed when running towards the wall. During this process, the robot is taking ToF measurements and storing them into a local array. After the robot stops, it sends the readings to my computer. I will not show the pseudocode because it is actually trivial to code...
+                        </p>
 
                         <iframe width="820" height="515"
-                        src="https://www.youtube.com/embed/D1yc6wUtoBk">
+                        src="https://www.youtube.com/embed/Q3Jt7L5gZ8o">
                         </iframe>
-                        <span class="caption text-muted">Measuring acceleration when going straight.</span>
+                        <span class="caption text-muted">Speed ramping up and slowing down. ToF is working to take measurements of distance to the wall.</span>
 
+                        <p>
+                            The plot below shows the raw ToF measurements reported by the robot. The x-axis shows the sample index, we see that there are 75 total samples reported from the robot. The first 25 samples is when the robot is accelerating, and the last 50 samples is when the robot is braking. On the plot, we can see that <mark>the first ~18 samples are obviously unstable/wrong</mark> because the distance between the robot and the wall in reality is constantly decreasing. We can also see that <mark>even though the ToF sensor is set to use the long distance randing mode, readings are only valid when the distance is less than 1.8 meters and the robot is moving fast.</mark> Fortunately, ideally the robot achieves its maximum speed in this set up at the 25 sample, and we can look at that data point to determine the maximum speed the robot has achieved under this set up.
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab5/plot-distance.jpg" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> Distance to the wall measurement reported by ToF sensor. A total of 75 samples are taken. Robot starts braking after 25 samples are taken.</span>
+
+                        <p>
+                            The robot reports a total of 5000.02 ms time elapsed for these 75 measurements. Each measurement takes approximately 67 ms. To make the plot a little bit smoother, we look at the difference between ToF measurement n-1 and ToF measurement n+1, divide that by 2 and then divide by 67 ms to get the speed at sampling point n. This calculation yields the plot below for the speed of the robot.
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab5/plot-velocity.jpg" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> Speed vs. time calculated from the distance measurements. Speed calculated over a 3-sample window for better accuracy.</span>
+
+                        <p>
+                            We can ignore the portion of the plot when time is less than 1 s because of the wrong ToF measurements in the first ~18 samples. After that, we see that speed of the robot increases from 1 to ~1.8 second (robot is accelerating), and the speed decreases after ~1.8 second (robot is braking). The <mark>maximum speed the robot achieves is ~2 m/s</mark>.
+                        </p>
+
+                        <p>
+                            When accelerating, the PWM value is 100, and the PWM value is 150 when the robot is braking. This is certainly not the maximum speed the robot can achieve because a) the accelerating PWM value could be higher, and b) the robot could use a longer distance to accelerate. However, this is the best I can do in my experiment setup because there is not enough room at home for my robot to accelerate and brake while preventing the robot from either flipping because of braking too hard or hitting the wall because the braking distance is not long enough.
+                        </p>
+
+                        <p>
+                            In conclusion, this experiment has convinced me that the robot is totally controllable when it's speed is between 0 to 2 m/s: the ToF sensor reading could keep up and the motors can respond fast enough. The robot is definitely capable of moving even faster, but my experiment set up prevents me from pushing the maximum speed even further. In the future, we may use feedback control to experiment with faster speed while protecting the robot from being destroyed. :)
+                        </p>
 
                     </div>
                 </div>
