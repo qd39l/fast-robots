@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="Github web page for ECE 5960: Design and Implementation of fast robots (2022SP)." />
+        <meta name="author" content="Owen Deng (qd39@cornell.edu)" />
+        <!-- FIXME -->
+        <title>Fast Robots: Lab 5</title>
+        <link rel="icon" type="image/x-icon" href="assets/ai.png" />
+        <!-- Font Awesome icons (free version)-->
+        <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
+        <!-- Google fonts-->
+        <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+        <!-- Core theme CSS (includes Bootstrap)-->
+        <link href="css/styles.css" rel="stylesheet" />
+    </head>
+    <body>
+        <!-- Navigation-->
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="index.html">Fast Robots: Lab Notebook</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="about.html">About</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <!-- Page Header-->
+        <!-- FIXME -->
+        <header class="masthead" style="background-image: url('assets/img/lab5/overall-wiring.jpg')">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>Open loop control</h1>
+                            <h2 class="subheading"> Motor controls and swap the stock PCB! </h2>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">Owen Deng</a>
+                                on Mar 22, 2022
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Post Content-->
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <p>
+                            In this lab, we are finally able to take the robot apart and swap the factory PCB with our own Artemis + h-bridge controller. Before this lab, we rely on the factory PCB and the factory remote controller to manually control the robot. At the end of this lab, the robot will be able to execute a pre-programmed series of moves. The Artemis is now in control of the robot instead of just sitting outside taking measurements!
+                        </p>
+
+                        <h2 class="section-heading">Hardware setup (wiring)</h2>
+
+                        <h3 class="section-subheading">Background</h3>
+                        <p>
+                            At the end of lab 4, I have the Artemis board attached to two time-of-flight sensors and an IMU. In order to drive the motors, I need to add two motor drivers (h-bridge) to the system. The whole system will then be powered by two separate batteries: 1 x 650 mAh battery to power the Artemis board and all the peripherals, and 1 x 850 mAh battery to power the motors. 
+                        </p>
+
+                        <p>
+                            The motor driver board we are using for this course is Pololu's DRV8833 dual motor driver carrier. It's documentation is available <a href="https://www.pololu.com/product-info-merged/2130" class="link-primary">here</a>, and the motor driver chip's datasheet is available <a href="https://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&gotoUrl=https%3A%2F%2Fwww.ti.com%2Flit%2Fgpn%2Fdrv8833" class="link-primary">here</a>. The image below shows how the motor driver should be connected to PWM pins on the Artemis board, the DC motors, and the motor power battery. 
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab5/motor-driver-connection.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> DRV8833 dual motor driver carrier board connection. Source: <a href="https://www.pololu.com/product-info-merged/2130" class="link-primary">DRV8833 documentation</a></span>
+
+                        <p>
+                            The DRV8833 chip is only able to deliver a limited amount of current to each motor. Unfortunately, that is not enough current to drive our motors "fast" enough to call this robot a "fast" robot. Therefore, we will use EACH DRV8833 to drive ONE motor. The way we do it is by connecting <code>BIN1/AIN1</code>, <code>BIN2/AIN2</code>, <code>BOUT1/AOUT1</code>, and <code>BOUT2/AOUT2</code>. The other connections are the same, except that one board is only connected to one motor and two PWM pins. There are two motors on the robot, each controlling the left or right wheels. This way, we use two motor driver boards to control two motors, and each board is then able to deliver twice amount of current (the amount of current needed in a fast robot).
+                        </p>
+
+                        <p>
+                            In addition to attaching the motor driver boards, we also need to
+                            <ul class="list-unstyled">
+                                <ul>
+                                    <li>Add a switch for motor battery (manual power cut off).</li>
+                                    <li>Mount the ToF sensors and the IMU on the board.</li>
+                                    <li>Cable management such that the robot can still function after flipping.</li>
+                                </ul>
+                            </ul>
+                        </p>
+
+                        <h3 class="section-subheading">The actual wiring</h3>
+                        <p>
+                            After all the dirty soldering + hot-gluing + zip-tie, hardware setup is completed. The picture below shows the location of each component with labels.
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab5/overall-labeled.jpg" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> Overall wiring of my robot</span>
+
+                        <p>
+                            The ToF sensors, the IMU, the motor drivers, and the motor power switch are all secured on the robot with hot glue. Wires are mostly secured with zip-tie with a few hot-glued spots. The Artemis board and its battery are fitted into the factory PCB's chassis, loosely secured by wires connecting to the front ToF sensor such that the battery and the board can be taken out for debugging and recharging (another picture below).
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab5/overall-side.jpg" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> Seeing from the side, we can see the Artemis board and its battery fitted inside the chassis.</span>
+
+                        <p>
+                            The other ToF sensor (<code>ToF 0</code>) is mounted to the front of the robot by hot-glue (see the picture below). We also see how the Artemis board and the battery is secured by the wiring harness on top. 
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab5/front-tof.jpg" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> A ToF sensor mounted to the front of the robot.</span>
+
+                        <p>
+                            Just another view from the side: the side ToF sensor is sensing between the wheels.
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab5/side-tof.jpg" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> A ToF sensor mounted to the left sideside of the robot.</span>
+
+                        <h3 class="section-subheading">Testing</h3>
+
+                        <p>
+                            Existing code from previous labs is used for testing the connection of ToF sensors and the IMU, making sure they are still function. A new program is used to test motor driver connections. I made a wrapper class to control the motors with helper functions like <code>car_forward(speed)</code> and <code>car_backward(speed)</code>. The simple test program has the pseudocode below.
+                        </p>
+
+                        <pre>
+                            <code>
+forward(left, 100);
+forward(right, 100);
+delay(1000);
+backward(left, 100);
+backward(right, 100);
+delay(1000);
+stop(left, 255);
+stop(right, 255);
+                            </code>
+                        </pre>
+
+                        <p>
+                            I observed the wheels turnning forward for 1 second, turning backward for 1 second, and a hard stop. This has convinced me that my motor driver connections are wired correctly.
+                        </p>
+
+
+                        <h2 class="section-heading">Explore PWM lower limit for turning the motors</h2>
+
+
+                        <h2 class="section-heading">Going a straight line</h2>
+
+
+                        <h2 class="section-heading">Open loop control</h2>
+
+                        <h2 class="section-heading">A1: analogWrite frequency</h2>
+
+                        <h2 class="section-heading">A2: </h2>
+
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/D1yc6wUtoBk">
+                        </iframe>
+                        <span class="caption text-muted">Measuring acceleration when going straight.</span>
+
+
+                    </div>
+                </div>
+            </div>
+        </article>
+        <!-- Footer-->
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <li class="list-inline-item">
+                                <a href="https://github.com/qd39l/fast-robots">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; Fast Robots 2022</div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- Bootstrap core JS-->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Core theme JS-->
+        <script src="js/scripts.js"></script>
+    </body>
+</html>
