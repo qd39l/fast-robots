@@ -59,10 +59,91 @@
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <p>
-                            
+                            The purpose of this lab is to build a 2D map of a static room. The "room" is set up in the front room of the lab with cardboard boxes and wood boards. The robot will be manually placed on multiple spots of the room, and it will collect distance readings (from ToF sensor) when turning around in place. Data will be merged together to create the map of the whole room. At the end, a line-based map will be created from the merged map.
                         </p>
 
                         <h2 class="section-heading">PID control for turning</h2>
+                        <p>
+                            At this point, the robot has already been wired up with ToF sensors, an IMU, and motor drivers connected to the motors. Hardware-wise, the robot is capable of performing all the tasks in this lab. All the work that is left to do is software programming. 
+                        </p>
+
+                        <p>
+                            The first task is to have the robot turning around in place in small, accureate increments. Later on, the robot will be logging the ToF sensor reading and the gyroscope accumulated orientation at each increment. Because I have completed task B in the PID lab, PID control of turning is simply a matter of slowly incrementing the set point. The simple code snippet attached below shows clearly how this is done.
+                        </p>
+
+                        <pre>
+                            <code>
+case mapping:
+    // get current orientation
+    current_orientation = my_imu.get_ang().yaw_gyr;
+
+    // pid compute
+    orientation_controller.compute();
+
+    // feed updated turn speed into the motors
+    my_motors.car_turn(turn_speed, -turn_speed);
+
+    // increment the set orientation
+    if (delay_nonblocking(50)) set_orientation += 3;
+                            </code>
+                        </pre>
+
+                        <p>
+                            Code is simple, and it works well. There is a 50 ms non-blocking delay between each 3-degree increment to simulate the sampling time of the ToF sensor. 
+                        </p>
+
+                        <h2 class="section-heading">Confirm the performance of PID controller</h2>
+
+                        <p>
+                            The performance of the PID controller can be confirmed by combining the two methods below:
+                            <ol class="list-group list-group-numbered">
+                                <li class="list-group-item">Maintaining an array of the latest 10 differences data between the set point and the current orientation. Only increment the set point when all elements in the array are less than the step size.</li>
+                                <li class="list-group-item">Have the robot turning in place and visually confirm that it is not making progress too slow, not oscillating, and it is not stuck.</li>
+                            </ol>
+                        </p>
+
+                        <p>
+                            The first method can be realized by the code snippet below.
+                        </p>
+
+                        <pre>
+                            <code>
+// maintain lookback array
+orientation_difference[lookback_idx++] = abs(set_orientation - current_orientation);
+if (lookback_idx == lookback_samples)
+    lookback_idx = 0;
+max_diff = orientation_difference.find_max();
+
+if (max_diff less than step_size) set_orientation += step_size;
+                            </code>
+                        </pre>
+
+                        <p>
+                            The video below shows the second confirmation. The robot is turning in place without much shifting. It is making progress pretty quickly (120 data points collected for ~30s) even with orientation checking. It does not have much oscillation or overshooting, meaning that my PID control is working well.
+                        </p>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/p0ym4XdwwN0">
+                        </iframe>
+                        <span class="caption text-muted">PID orientation control with robot turning in place.</span>
+
+                        <h2 class="section-heading">PID parameters</h2>
+
+                        <p>
+                            I am using the following PID parameters:
+                        </p>
+
+                        <pre>
+                            <code>
+double kp = 30;
+double ki = 2e-3;
+double kd = 25;
+                            </code>
+                        </pre>
+
+                        <p>
+                            These parameters are very close to what I used in Lab 6 by following the two heuristics the instructor discussed in lecture. <code>kp</code> and <code>kd</code> are tuned lower to further avoid overshooting because the robot in this lab is supposed to turn much slower than that in Lab 6.
+                        </p>
 
                         <h2 class="section-heading">Obstacles setup and data collection</h2>
 
