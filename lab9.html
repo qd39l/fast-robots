@@ -147,11 +147,61 @@ double kd = 25;
 
                         <h2 class="section-heading">Obstacles setup and data collection</h2>
 
+                        <p>
+                            The map below shows the physical setup of the "room." 
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab9/map.jpg" width = 800 alt="..." /></a>
+                        <span class="caption text-muted"> Physical setup of the map and obstacles.</span>
+
+                        <p>
+                            The robot will be collecting data in designated spots. The spots are marked with white tape with their corresponding coordinates. There is also a spot corresponding to the origin. The picture below shows one such spot with the coordinate (5, -3).
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab9/label.jpg" width = 800 alt="..." /></a>
+                        <span class="caption text-muted"> Picture of a label. Robot will be turning in place on these labeled spots and collect mapping data.</span>
+
+                        <p>
+                            From the programming aspect, there are minimum changes made. The robot would take a time of flight measurement when the robot is close enough to the set point. It logs down the distance measurement as well as the gyroscope calculated yaw angle. Then it changes the set point and repeats untill it has turned over 360 degrees. After that, the robot sends back both arrays to my laptop for data visualization with the help of my debugging scripts. The video below shows my robot collecting data in the lab in one of the spots.
+                        </p>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/7lRZ0v8E1wE">
+                        </iframe>
+                        <span class="caption text-muted">My robot collecting data in the map.</span>
+
                         <h2 class="section-heading">Post-processing: plotting data</h2>
 
-                        <h2 class="section-heading">Post-processing: transformation matrices and merging</h2>
+                        <h3 class="section-subheading">Post-processing: plotting data</h2>
+                        
+                        <p>
+                            Because I am using orientation PID control, I will need to trust the orientation from integrated gyroscope values. The robot's starting orientations are different for different spots. They are plotted with the same viewer's orientation to correspond to the map during sanity checking. When we are doing data processing later, an offset to the gyroscope angle can be easily added to make those orientations aligned. 
+                        </p>
+
+                        <p>
+                            Because the robot is turning in place and the distance to wall is measured, it will be good to do quick visualizations by making polar plots for sanity checking. Pictures below shows both polar plots for each spot where measurements are taken, and a labeled picture of the map to show where each spot is located as well as their coordinates. 
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab9/origin.png" width = 300 alt="..." /></a>
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab9/spot1.png" width = 300 alt="..." /></a>
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab9/spot2.png" width = 300 alt="..." /></a>
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab9/spot3.png" width = 300 alt="..." /></a>
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab9/spot4.png" width = 300 alt="..." /></a>
+                        <span class="caption text-muted"> Polar plots at each spot. The viewing orientations are aligned.</span>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab9/map-labeled.jpg" width = 800 alt="..." /></a>
+                        <span class="caption text-muted"> Real map set up with labels to show where the spots are.</span>
+
+                        <p>
+                            Sanity checking shows better than expected consistency between the measured polar plot and the real-world setup. This gives me great confidence to proceed in this lab.
+                        </p>
+
+                        <h2 class="section-heading">Post-processing: transformation and merging</h2>
+
+
 
                         <h2 class="section-heading">Line-based map</h2>
+
 
                     </div>
                 </div>
