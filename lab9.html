@@ -198,9 +198,134 @@ double kd = 25;
 
                         <h2 class="section-heading">Post-processing: transformation and merging</h2>
 
+                        <h3 class="section-subheading">Orientation alignment </h3>
 
+                        <p>
+                            Because the starting orientation of the robot is different in different spots, I need to add offsets to the angle data for each spot such that they are aligned. Luckily, the offset needed is already figured out in the sanity checking stage. What is left is to add an offset to the angle data array.
+                        </p>
+
+                        <h3 class="section-subheading">Converting from polar coordinates to cartesian coordinates</h3>
+
+                        <p>
+                            Data collected by the robot includes the orientation of the robot and the distance it measures. Essentially, this is in polar coordinate <code>(rho, phi)</code>. We first need to convert the coordinates into cartesian coordinates. The code snippet below will do the job.
+                        </p>
+
+                        <pre>
+                            <code>
+def pol2cart(rho, phi):
+    x = rho * np.cos(phi)
+    y = rho * np.sin(phi)
+    return(x, y)
+                            </code>
+                        </pre>
+
+                        <h3 class="section-subheading">Transformation to account for the offset</h3>
+
+                        <p>
+                            At this point, we have the "wall data points" in Cartesian coordinate with the correct orientation. We now need to account for offsets. Each set of data points are taken in different spot, and we need to account for the spots' offset with respect to the origin.
+                        </p>
+
+                        <p>
+                            For each data point, the transformation needed to perform is simple because there is no rotation, only translation. Therefore, the transformation matrix would be <code>A = [1, 0, off_x; 0, 1, off_y; 0, 0, 1]</code>, where <code>(off_x, off_y)</code> is the coordinate of the spot where measurements are taken. However, directly applying the offsets to the <code>x, y</code> data arrays seem to be a much easier and straight-forward implementation. As an engineer, that's what I did, and the result (the picture below) looks good.
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab9/merged-map.png" width = 800 alt="..." /></a>
+                        <span class="caption text-muted"> Merged map based on robot measurements in different spots.</span>
 
                         <h2 class="section-heading">Line-based map</h2>
+
+                        <p>
+                            A line-based map is created to make modeling easier. This is done manually by drawing lines on the merged map and reading out the start and end points of the lines. The line-based map imposed on the merged map is shown below.
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab9/merged-map-line.png" width = 800 alt="..." /></a>
+                        <span class="caption text-muted"> Line-based map.</span>
+
+                        <p>
+                            Here are the coordinates.
+                        </p>
+
+                        <table class="table">
+                            <thead>
+                              <tr>
+                                <th scope="col">Description</th>
+                                <th scope="col">Start coordinate (mm)</th>
+                                <th scope="col">End coordinate (mm)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <th scope="row">South walls</th>
+                                <td><code>(-1600, -1400)</code></td>
+                                <td><code>(-200, -1400)</code></td>
+                              </tr>
+                              <tr>
+                                <th scope="row"></th>
+                                <td><code>(-200, -1400)</code></td>
+                                <td><code>(-200, -1000)</code></td>
+                              </tr>
+                              <tr>
+                                <th scope="row"></th>
+                                <td><code>(-200, -1000)</code></td>
+                                <td><code>(200, -1400)</code></td>
+                              </tr>
+                              <tr>
+                                <th scope="row"></th>
+                                <td><code>(200, -1000)</code></td>
+                                <td><code>(200, -1400)</code></td>
+                              </tr>
+                              <tr>
+                                <th scope="row"></th>
+                                <td><code>(200, -1400)</code></td>
+                                <td><code>(2000, -1400)</code></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">East wall</th>
+                                <td><code>(2000, -1400)</code></td>
+                                <td><code>(2000, 1400)</code></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">North wall</th>
+                                <td><code>(-800, 1400)</code></td>
+                                <td><code>(2000, 1400)</code></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">West walls</th>
+                                <td><code>(-800, 1400)</code></td>
+                                <td><code>(-800, 0)</code></td>
+                              </tr>
+                              <tr>
+                                <th scope="row"></th>
+                                <td><code>(-1600, 0)</code></td>
+                                <td><code>(-800, 0)</code></td>
+                              </tr>
+                              <tr>
+                                <th scope="row"></th>
+                                <td><code>(-1600, 0)</code></td>
+                                <td><code>(-1600, -1400)</code></td>
+                              </tr>
+                              <tr>
+                                <th scope="row">Isolated box</th>
+                                <td><code>(1400, 0)</code></td>
+                                <td><code>(1400, 500)</code></td>
+                              </tr>
+                              <tr>
+                                <th scope="row"></th>
+                                <td><code>(1400, 0)</code></td>
+                                <td><code>(800, 0)</code></td>
+                              </tr>
+                              <tr>
+                                <th scope="row"></th>
+                                <td><code>(800, 0)</code></td>
+                                <td><code>(800, 500)</code></td>
+                              </tr>
+                              <tr>
+                                <th scope="row"></th>
+                                <td><code>(800, 500)</code></td>
+                                <td><code>(1400, 500)</code></td>
+                              </tr>
+                            </tbody>
+                          </table>
 
 
                     </div>
