@@ -36,7 +36,7 @@
         </nav>
         <!-- Page Header-->
         <!-- FIXME -->
-        <header class="masthead" style="background-image: url('assets/img/lab4/background.jpg')">
+        <header class="masthead" style="background-image: url('assets/img/lab10/background.png')">
             <div class="container position-relative px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
@@ -60,11 +60,29 @@
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <h2 class="section-heading">Overview</h2>
 
+                        In this lab, you will setup and use your simulation environment. You will learn how to control your virtual robot and use the live plotting tool.
+
                         <h2 class="section-heading">Simulation Software Suite</h2>
+
+                        1. GUI
+                        2. Odometer and ground truth
+                        3. Plotter
+                        4. API
 
                         <h2 class="section-heading">Open loop control</h2>
 
+                        Make your robot follow a set of velocity commands to execute a “square” loop anywhere in the map.
+                        Plot and analyze the ground truth and odometry of the robot.
+                        What is the duration of a velocity command?
+                        Does the robot always execute the exact same shape?
+
                         <h2 class="section-heading">Closed loop control</h2>
+
+                        Design a simple controller in your Jupyter notebook to perform a closed-loop obstacle avoidance.
+                        By how much should the virtual robot turn when it is close to an obstacle?
+                        At what linear speed should the virtual robot move to minimize/prevent collisions? Can you make it go faster?
+                        How close can the virtual robot get to an obstacle without colliding?
+                        Does your obstacle avoidance code always work? If not, what can you do to minimize crashes or (may be) prevent them completely?
 
                     </div>
                 </div>
