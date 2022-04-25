@@ -6,7 +6,7 @@
         <meta name="description" content="Github web page for ECE 5960: Design and Implementation of fast robots (2022SP)." />
         <meta name="author" content="Owen Deng (qd39@cornell.edu)" />
         <!-- FIXME -->
-        <title>Fast Robots: Lab 7</title>
+        <title>Fast Robots: Lab 11</title>
         <link rel="icon" type="image/x-icon" href="assets/ai.png" />
         <!-- Font Awesome icons (free version)-->
         <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
@@ -41,12 +41,12 @@
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <div class="post-heading">
-                            <h1>Kalman filters</h1>
-                            <h2 class="subheading"> Sensor fusion </h2>
+                            <h1>Localization (sim)</h1>
+                            <h2 class="subheading"> Bayes filter implementation </h2>
                             <span class="meta">
                                 Posted by
                                 <a href="#!">Owen Deng</a>
-                                on Mar 22, 2022
+                                on Apr 25, 2022
                             </span>
                         </div>
                     </div>
@@ -58,7 +58,34 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
-                        <h2 class="section-heading">WIP</h2>
+                        <p>
+                            The purpose of this lab is to implement robot localization using Bayes filter. This lab is built on previous labs, including the mapping lab where we used the robot to measure outside environment and recreate a line-map, and the simulator lab where we have get familiar with using the simulator. In this lab, we are working only with the simulator, which contains the same map as the real-world map. We will implement our Bayes filter algorithm on the virtual robot in the simulator. 
+                        </p>
+
+                        <p>
+                            The rationale behind starting with the simulator instead of going straight into using the physical robot is that debugging with the simulator is much easier. We would like to make sure the Bayes filter algorithm software is implemented correctly. Then in the next stage (the following lab), we can focus on getting the communication between the robot and the laptop correct. This way, we will not have to deal with a possible difficult situation where we are debugging the robot and the algorithm at the same time...
+                        </p>
+
+                        <h2 class="section-heading">Localization goal and state space</h2>
+
+                        <p>
+                            1. Talk about what localization is.
+                            2. Talk about real robot state space (continuous)
+                            3. Talk about discretized 3d grid space (with img)
+                            4. talk about code implementation with index
+                        </p>
+
+                        <h2 class="section-heading">Bayes filter algorithm</h2>
+
+                        <h2 class="section-heading">Code walkthrough</h2>
+
+                        <p>
+                            1. talk about what calls what
+                        </p>
+
+                        <p>
+                            Walk through code with pictures. correspond to bayes filter algorithm
+                        </p>
 
                     </div>
                 </div>
