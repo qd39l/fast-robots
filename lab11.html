@@ -68,38 +68,98 @@
 
                         <h2 class="section-heading">Localization goal and state space</h2>
 
+                        <h3 class="section-subheading">Localization and the map</h3>
+
                         <p>
-                            1. Talk about what localization is.
-                            2. Talk about real robot state space (continuous)
-                            3. Talk about discretized 3d grid space (with img)
-                            4. talk about code implementation with index
+                            In robotics, localization simply means determining the state (which in the context of this lab, the location and orientation) of the robot without involving a human. Otherwise, I can certainly look at (or measure) the true state of the robot and send such information to the robot. In this lab, the robot travels inside a 2D map (refer to lab 9: mapping). It could be in any <code>(x, y)</code> location inside the map, and it could be facing any direction. To quantify the state in mathematical notation, the robot's state can be described in <code>(x, y, theta)</code>, where
+                            
+                            <ul class="list-unstyled">
+                                <ul>
+                                    <li>[-1.6764, +1.9812) meters or [-5.5, 6.5) feet in the x direction,</li>
+                                    <li>[-1.3716, +1.3716) meters or [-4.5, +4.5) feet in the y direction,</li>
+                                    <li>[-180, +180) degrees along the theta axis.</li>
+                                </ul>
+                            </ul>
+                            
+                            To better visualize the map and the coordinates, the picture below shows the robot in the map when its state is (0, 0, 0), meaning that it is at the origin of the map, and it is facing directly to the right.
+
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab11/robot_origin.png" width = 800 alt="..." /></a>
+                            <span class="caption text-muted"> The virtual robot inside the simulator. The robot's state is (0, 0, 0). </span>
+
+                            If the robot turns slightly to its left, it's <code>theta</code> increases. If the robot turns slightly to its right, then it's <code>theta</code> decreases.
+                        </p>
+
+                        <h3 class="section-subheading">Discretized 3D grid space</h3>
+
+                        <p>
+                            Due to the nature of modern electronics being mostly digital, it is very difficult to deal with the continuous, analog state space. Therefore, we will discretize the robot's state space to make it computationally feasible. We will make the continuous 3D space into 3D grid space, with each grid being in size <code>(0.3048m, 0.3048m, 20 degrees)</code> The size of the grid cell in <code>(x, y)</code> coordinates is the same as the tile grid cell's size. The total number of cells along each axis are <code>(12, 9, 18)</code>. Simple calculations will tell us that the robot in the previous picture is sitting in grid cell index <code>(5, 4, 8)</code>. 
+                        </p>
+
+                        <p>
+                            In our Bayes filter implementation, we will maintain a 3D array of dimensions <code>(12, 9, 18)</code>. We call this the belief array. The value of the array cell with index <code>(x, y, a)</code> represents the probability of the robot being in discretized state <code>(x, y, a)</code>. The picture below shows a visualization of the 3D grid cell array.
                         </p>
 
                         <a href="#!"><img class="img-fluid" src="assets/img/lab11/3d_grid.jpg" width = 800 alt="..." /></a>
                         <span class="caption text-muted"> 3D visualization of the discretized state space.</span>
 
+                        <p>
+                            During the course of robot movements and Bayes filter updates, the Bayes filter algorithm will update the probability of the robot's presence in each grid cell. The grid cell with the highest value (thus highest probability) represents the most probable pose of the robot. 
+                        </p>
+
 
 
                         <h2 class="section-heading">Bayes filter algorithm</h2>
+                        
+                        <p>
+                            In our experiment, the robot progress in <mark>steps</mark>. In each step, the robot does the following two things:
+                            <ol class="list-group list-group-numbered">
+                                <li class="list-group-item">Make a movement characterized by the odometry motion model. A movement can be described by three parameters: <code>rotation1, translation, rotation2</code>. </li>
+                                <li class="list-group-item">Make an observation by turning 360 degrees in place and taking a ToF sensor measurement every 20 degrees, yielding an array of 18 distance measurements. </li>
+                            </ol>
 
-                        <a href="#!"><img class="img-fluid" src="assets/img/lab11/bayes_filter_algo.png" width = 800 alt="..." /></a>
-                        <span class="caption text-muted"> Bayes filter algorithm</span>
+                            Meanwhile, the picture below shows the Bayes filter algorithm in each step. 
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab11/bayes_filter_algo.png" width = 800 alt="..." /></a>
+                            <span class="caption text-muted"> Bayes filter algorithm</span>
+
+                            <code>x_t</code> describes the state of the robot in timestep <code>t</code>. There is a unique <code>x_t</code> corresponding to a set of index in the 3D grid space. <code>bel_bar(x_t)</code> means the prior belief of the possibility of a robot being in state <code>x_t</code>, and <code>bel(x_t)</code> means the belief of the possibility of a robot being in state <code>x_t</code>. The algorithm has two steps, the prediction step, and the update/measurement step. 
+                        </p>
+
+                        <p>
+                            In the prediction step (line 2), the Bayes filter algorithm computes the prior belief for the current timestep (that is <code>bel_bar(x_t)</code>) from the belief in the previous timestep (<code>bel(x_t)</code>) and the control input of the robot (<code>u</code>). Because the control input of the robot will not be available until robot action 1 is completed, the prediction step will be executed, in each timestep, after robot action 1 is executed. The calculation in the prediction step is simple conditional probability. In words, for each <code>x_t</code>, the algorithm sums up the probability of transitioning from all the previous possible states (in <code>bel</code>) given the last robot control action. 
+                        </p>
+
+                        <p>
+                            In the update step (line 3), the Bayes filter algorithm incorporates the ToF observation measurements into its estimation. Note that in the prediction step, only information from the robot's control input is taken into account. What happens in the update step is that for each <code>x_t</code>, the robot multiply the prior belif in <code>bel_bar</code> with the likelihood of the robot making the measurements in the state. <code>bel</code> is then normalized such that probability sums to 1.
+                        </p>
+
 
                         <h2 class="section-heading">Code walkthrough</h2>
 
                         <p>
-                            1. talk about what calls what
+                            In this section, we will look at my implementation and the Bayes filter algorithm together, such that we can relate the implementation with the algorithm.
                         </p>
 
                         <p>
-                            Walk through code with pictures. correspond to bayes filter algorithm
+                            The first thing to mention is a helper function <code>yaw_to_deg(yaw_idx)</code>. It takes the angle grid index as input, and returns the angle (in degrees) corresponding to this angle index. 
                         </p>
 
                         <a href="#!"><img class="img-fluid" src="assets/img/lab11/yaw_to_deg.png" width = 800 alt="..." /></a>
                         <span class="caption text-muted"> yaw_to_deg helper function</span>
 
+                        <p>
+                            Moving on, there is this <code>compute_control(cur_pose, prev_pose)</code> function. It takes two arguments, two states in the form of <code>(x, y, yaw)</code>, and calculates the odometry control needed for moving the robot from <code>prev_pose</code> to <code>cur_pose</code>. The returned odometry control is in the form of <code>(rotation_1, translation, rotation_2)</code>. <code>rotation_1</code> and <code>rotation_2</code> are normalized to be in the range of <code>[-180, 180]</code> in line 42 and 43.
+                        </p>
+
+                        <p>
+                            This function is needed because recall in line 2 of the Bayes filter algorithm, the control input is needed instead of two positions.
+                        </p>
+
                         <a href="#!"><img class="img-fluid" src="assets/img/lab11/compute_control.png" width = 800 alt="..." /></a>
                         <span class="caption text-muted"> compute_control function</span>
+
+                        <p>
+                            To calculate <code>p(x_t | u_t, x_t-1)</code> in the update step of the Bayes filter algorithm, we use this <code>odom_motion_model(cur_pose, prev_pose, u)</code> function. The argument <code>u</code> is the actual control input. The arguments <code>cur_pose, prev_pose</code> are two states of the robot. This function calculates the probability of transitioning from <code>prev_pose</code> to <code>cur_pose</code> given the actual input, <code>u</code>. The probability is calculated using gaussian distribution with the mean being the actual input and the deviation being <code>odom_rot_sigma [default=15]</code> and <code>odom_trans_sigma [default=0.45]</code>, evaluated at the calculated control needed by transitioning from <code>prev_pose</code> to <code>cur_pose</code> (line 62-64). 
+                        </p>
 
                         <a href="#!"><img class="img-fluid" src="assets/img/lab11/odom_equation.gif" width = 800 alt="..." /></a>
                         <span class="caption text-muted"> Equations to calculate the probability of transition from one state to another given a control</span>
@@ -107,27 +167,51 @@
                         <a href="#!"><img class="img-fluid" src="assets/img/lab11/odom_model.png" width = 800 alt="..." /></a>
                         <span class="caption text-muted"> Implementation of the odometry motion model</span>
 
+                        <p>
+                            With <code>compute_control</code> and <code>odom_motion_model</code> being implemented, we can implement <code>prediction_step(cur_odom, prev_odom)</code>. The actual input, <code>u</code>, is first calculated by calling <code>compute_control</code>. Then <code>bel_bar</code> is reset to zeros. Then the algorithm steps over all the possible state pairs to update values in <code>bel_bar</code> following the Bayes prediction step algorithm. <code>p(x_t|u_t, x_t-1)</code> is calculated by calling the <code>odom_motion_model</code> function, and <code>bel</code> is an array available for access.
+                        </p>
+
                         <a href="#!"><img class="img-fluid" src="assets/img/lab11/prediction_step.png" width = 800 alt="..." /></a>
                         <span class="caption text-muted"> Implementation of Bayes algorithm's prediction step</span>
+
+                        <p>
+                            In the update step, we have the equation of <code>bel(x_t) = p(z_t|x_t) * bel_bar(x_t)</code> from the Bayes filter algorithm. <code>p(z_t|x_t)</code> signifies the probability of the robot getting measurement <code>z_t</code> if it is in the state <code>x_t</code>. This value is calculated by calling the <code>sensor_model</code> function, which we will discuss later. The other neede value, <code>bel_bar(x_t)</code>, is available after running the prediction step, and it will simply be an array available. At the end, <code>bel</code> is normalized to have the probabilities sum to 1.
+                        </p>
 
                         <a href="#!"><img class="img-fluid" src="assets/img/lab11/update_step.png" width = 800 alt="..." /></a>
                         <span class="caption text-muted"> Implementation of Bayes algorithm's update step</span>
 
-                        <a href="#!"><img class="img-fluid" src="assets/img/lab11/sensor_model_math.png" width = 800 alt="..." /></a>
+                        <p>
+                            Last but not least, we need to discuss the sensor model. <code>sensor_model(obs, pos)</code> takes two arguments. <code>obs</code> is an 1D array of length 18, corresponding to the 18 measurements the robot took in observation step. The second argument <code>pos</code> is an index in the 3D grid space. This function returns an 1D array of length 18, each element represents the likelihood of getting this sensor reading given the robot is in state <code>pos</code>. The returned array is multiplied together in <code>update_step</code> to get <code>p(z_t|x_t)</code>.
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab11/sensor_model_math.png" width = 300 alt="..." /></a>
                         <span class="caption text-muted"> Algorithm of the sensor model</span>
+
+                        <p>
+                            Again, the sensor model uses gaussian to calculate the probability. For each sensor measurement, the function first fetches the true measurement (calculated offline by ray-tracing), then it evaluates with a gaussian, with mean as the true value, and deviation as <code>sensor_sigma [default=0.1]</code>, evaluated at the observed value (line 113). 
+                        </p>
 
                         <a href="#!"><img class="img-fluid" src="assets/img/lab11/sensor_model.png" width = 800 alt="..." /></a>
                         <span class="caption text-muted"> Implementation of the sensor model</span>
 
                         <h2 class="section-heading">Result and outcomes</h2>
 
+                        <p>
+                            Below are two videos showing the results when running my Bayes filter algorithm on the simulator. The robot travels following a trajectory. There are three trajectories on the plotter. The red one is the odometry reading, which is very not accurate. The green one is the ground truth position of the robot, and the blue one is the location of the robot from running Bayes filter algorithm. In the second video, the plotter has the marginal distribution of prior belief overlayed on the screen. 
+                        </p>
+
+                        <p>
+                            Both videos shows very promising results. The odometry readings are way off the ground truth, but the Bayes filter prediction (the blue line) follows the ground truth (the green line) very closely. This has convinced me the correctness of my implementation. If my implementation is still not correct, this will still be good enough :)
+                        </p>
+
                         <iframe width="820" height="515"
-                        src="https://www.youtube.com/embed/XiKus_BpKMs">
+                        src="https://www.youtube.com/embed/ESw82sQ8vfc">
                         </iframe>
                         <span class="caption text-muted">Robot localization #1</span>
 
                         <iframe width="820" height="515"
-                        src="https://www.youtube.com/embed/ZS2G_N2_qPU">
+                        src="https://www.youtube.com/embed/WQkHsUFv5Ao">
                         </iframe>
                         <span class="caption text-muted">Robot localization #2 (with marginal distribution in the 2d grid space)</span>
 
