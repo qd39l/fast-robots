@@ -174,16 +174,16 @@ case travel_forward:
                             The video below shows my stunt is working well. The robot travels fast. It initiates the turn at just the right distance such that it touches the 0.6m mark. 
 
                             <iframe width="820" height="515"
-                            src="https://www.youtube.com/embed/jniR8yxnIxM">
+                            src="https://www.youtube.com/embed/MGXwT600lhQ">
                             </iframe>
-                            <span class="caption text-muted">FIXME OWEN: Placeholder</span>
+                            <span class="caption text-muted">Stunt demo: drift much?</span>
                         </p>
 
                         <p>
                             Data are also recorded in the process. The ToF sensor readings, KF estimation, robot orientation estimated by gyroscope, and the motor input including in the step (forward) stage and the PID turning stage are all recorded. We will look at the graphs one by one. The picture below shows the ToF sensor reading and the KF estimation plotted over time. In this plot, when a ToF reading is not available, the last available ToF reading is used. This is why the ToF (blue line) is showing step-like patterns. On the other hand, the Kalman filter estimation is pretty smooth, and it agrees very well with ToF readings. This is saying that our dynamic model and our Kalman filter is working very well. Note that both the ToF line and the KF line suddenly drops to zero when the KF estimation touches 1600 mm. That is when the robot has entered the turning stage. In the turning stage, the PID controller is responsible for determining the movement of the robot. ToF readings and KF estimations are no longer available in the turning stage.
 
-                            <a href="#!"><img class="img-fluid" src="assets/img/lab8/plot-tof-kf.png" width = 600 alt="..." /></a>
-                            <span class="caption text-muted"> Plot of Kalman filter estimatino distance of the robot from the wall and ToF readings. When the ToF reading is not available, the last available ToF reading is used. </span>
+                            <a href="#!"><img class="img-fluid" src="assets/img/lab8/plot-tof.png" width = 600 alt="..." /></a>
+                            <span class="caption text-muted"> Plot of Kalman filter estimatino distance of the robot from the wall and ToF sensor readings. When the ToF measurement is not available, the last available ToF reading is used. </span>
 
                             The picture below shows robot orientation (yaw) calculated by gyroscope accumulation. In the <code>travel_forward</code> phase, IMU readings are not taken, but since we assume the robot is travelling in a straight line, I set it to zero. IMU readings become available in the drifting stage. We see that the robot's orientation oscillates and converges to 180 degree (the target orientation for the PID controller). Then the robot starts travelling toward the direction it came from. 
 
@@ -202,6 +202,23 @@ case travel_forward:
                         <p>
 
                         </p>
+
+                        <h2 class="section-heading">Blooper #1: caught by Jade 11PM in Phillips</h2>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/RZXNUFmtehQ">
+                        </iframe>
+                        <span class="caption text-muted">I was testing the robot at night. Jade heard the robot noise...</span>
+
+                        <h2 class="section-heading">Blooper #2: broke the ToF</h2>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/aLAFO5m35Ec">
+                        </iframe>
+                        <span class="caption text-muted">Not good...</span>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab8/broken-tof.jpg" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> This is bad.</span>
 
                     </div>
                 </div>
