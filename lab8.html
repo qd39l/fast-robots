@@ -200,6 +200,41 @@ case travel_forward:
                         <h2 class="section-heading">Open loop stunt</h2>
 
                         <p>
+                            The video below shows my open loop stunt. Please enjoy!
+
+                            <iframe width="820" height="515"
+                            src="https://www.youtube.com/embed/N7Cwv0STotY">
+                            </iframe>
+                            <span class="caption text-muted">Open loop control stunt</span>
+
+                            Here is the control sequence:
+                            <pre>
+                                <code>
+my_motors.car_straight(255);
+delay(300);
+
+my_motors.car_turn(-50, 150); // left motor, right motor
+delay(200);
+
+my_motors.car_straight(150);
+delay(200);
+
+my_motors.car_turn(150, -50);
+delay(200);
+
+my_motors.car_straight(150);
+delay(200);
+
+my_motors.car_turn(150, -50);
+delay(400);
+
+my_motors.car_straight(255);
+delay(200);
+
+my_motors.car_turn(-255, 255);
+delay(1000);
+                                </code>
+                            </pre>
 
                         </p>
 
