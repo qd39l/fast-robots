@@ -58,7 +58,55 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
-                        <h2 class="section-heading">WIP</h2>
+                        <p>
+                            Intro paragraph.
+                        </p>
+
+                        <h2 class="section-heading">Step response to find steady state speed and 90% rise time</h2>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/Fea3NtJamUM">
+                        </iframe>
+                        <span class="caption text-muted">Robot running towards a wall while measuring ToF sensor readings.</span>
+
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab7/step-resp-tof.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> ToF sensor readings as the robot runs toward the wall. </span>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab7/step-resp-motor.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> Step motor output (PWM=180) as a function of time. </span>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab7/step-resp-velocity.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> Velocity extracted from ToF sensor readings. </span>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab7/step-resp-velocity-zoom.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> Velocity zoomed-in to time = [2.5, 4.5] seconds range. </span>
+
+
+                        <h2 class="section-heading">A and B matrix</h2>
+
+                        <h2 class="section-heading">Python implementation</h2>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab7/kf-20-20-20.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> Kalman filter position estimation overlayed with true ToF readings. (sigma_1 = 20, sigma_2 = 20, sigma_z = 20) </span>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab7/kf-20-20-0.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> Kalman filter position estimation overlayed with true ToF readings. (sigma_1 = 20, sigma_2 = 20, sigma_z = 0) </span>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab7/kf-20-20-100.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> Kalman filter position estimation overlayed with true ToF readings. (sigma_1 = 20, sigma_2 = 20, sigma_z = 100) </span>
+
+                        <h2 class="section-heading">Robot (C++) implementation</h2>
+
+                        <h2 class="section-heading">Robot KF filter results and discussion</h2>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab7/kf-real.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> Robot-calculated Kalman filter estimation of position overlayed with robot ToF readings. When ToF reading is not available at a timestamp, the plot uses the last available ToF reading, thus creating the stepping effect on the ToF distance plot. </span>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/gUvlS06wlGA">
+                        </iframe>
+                        <span class="caption text-muted">Robot running towards a wall while running KF filter (motion model + ToF readings).</span>
 
                     </div>
                 </div>
