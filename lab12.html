@@ -6,7 +6,7 @@
         <meta name="description" content="Github web page for ECE 5960: Design and Implementation of fast robots (2022SP)." />
         <meta name="author" content="Owen Deng (qd39@cornell.edu)" />
         <!-- FIXME -->
-        <title>Fast Robots: Lab 7</title>
+        <title>Fast Robots: Lab 12</title>
         <link rel="icon" type="image/x-icon" href="assets/ai.png" />
         <!-- Font Awesome icons (free version)-->
         <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
@@ -41,12 +41,12 @@
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <div class="post-heading">
-                            <h1>Kalman filters</h1>
-                            <h2 class="subheading"> Sensor fusion </h2>
+                            <h1>Localization (real)</h1>
+                            <h2 class="subheading"> From simulation to reality </h2>
                             <span class="meta">
                                 Posted by
                                 <a href="#!">Owen Deng</a>
-                                on Mar 22, 2022
+                                on May 7, 2022
                             </span>
                         </div>
                     </div>
@@ -58,6 +58,29 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
+
+
+                        <ul class="list-unstyled">
+                            <ul>
+                                <li>The robot starts with motor input = 0. It sits still. It is collecting ToF sensor value.</li>
+                                <li>At time = 1 second, the robot starts driving forward towards the wall with PWM = 180.</li>
+                                <li>When the robot is driving forward, if ToF sensor reading is available, it runs both the prediction and update step of the Kalman filter.</li>
+                                <li>If ToF sensor reading is not available, it runs only the prediction step of the Kalman filter. Only the motion model is taken into consideration.</li>
+                                <li>The robot logs down both the ToF reading, the KF estimate of position, and the timestamp. Whenever the ToF reading is not available, the last available ToF sensor reading is logged.</li>
+                                <li>At the end of the execution, the robot applies active brake and sends data back to the PC.</li>
+                            </ul>
+                        </ul>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/pfPmiwiKpls">
+                        </iframe>
+                        <span class="caption text-muted">Robot running towards a wall while running KF filter (motion model + ToF readings).</span>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab7/kf-real.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted"> Robot-calculated Kalman filter estimation of position overlayed with robot ToF readings. When ToF reading is not available at a timestamp, the plot uses the last available ToF reading, thus creating the stepping effect on the ToF distance plot. </span>
+
+                        <a href="https://anyafp.github.io/ece4960/" class="link-primary">here</a>
+
                         <h2 class="section-heading">WIP</h2>
 
                     </div>
