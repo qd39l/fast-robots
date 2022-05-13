@@ -206,8 +206,10 @@
                         <p>
                             Before running the actual Kalman filter algorithm, the <code>kf_init</code> function is called to initialize <code>x_val</code>. This function is called with the last ToF reading before the robot starts driving.
 
-                            <a href="#!"><img class="img-fluid" src="assets/img/lab7/kf-init.png" width = 400 alt="..." /></a>
                         </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab7/kf-init.png" width = 400 alt="..." /></a>
+
 
                         <p>
                             Then it is the actual KF algorithm. My KF implementation is adapted from Anya's code. Please checkout Anya's amazing website <a href="https://anyafp.github.io/ece4960/" class="link-primary">here</a>. In addition to the <code>dt</code> argument, which specifies the time elapsed between two <code>kf()</code> function calls, the function also has two optional parameters: <code>only_predictive</code> and <code>sensor_measurement</code>. When <code>only_predictive</code> is set to true, it means a ToF sensor reading is not yet available, and the Kalman filter only runs the predictive step. Otherwise, the Kalman filter runs both the predictive and update step, and it incorporates the ToF sensor measurement in the argument <code>sensor_measurement</code>. After execution of this function, values in <code>x_val</code> and <code>sig</code> will be updated.
