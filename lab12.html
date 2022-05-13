@@ -59,29 +59,86 @@
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
 
+                        <p>
+                            In <a href="https://qd39l.github.io/fast-robots/lab11.html" class="link-primary">lab 11</a>, we have built a localization algorithm with Bayes filtering method. We were working with a virtual robot in a simulation environment. In each unit of robot movement, the localization algorithm incorporates both the odometer readings and the sensor readings when making a 360 degree turn in place to make an estimate of the robot's state. As I have demonstrated in lab 11, this localization method works surprisingly well.
+                        </p>
 
-                        <ul class="list-unstyled">
-                            <ul>
-                                <li>The robot starts with motor input = 0. It sits still. It is collecting ToF sensor value.</li>
-                                <li>At time = 1 second, the robot starts driving forward towards the wall with PWM = 180.</li>
-                                <li>When the robot is driving forward, if ToF sensor reading is available, it runs both the prediction and update step of the Kalman filter.</li>
-                                <li>If ToF sensor reading is not available, it runs only the prediction step of the Kalman filter. Only the motion model is taken into consideration.</li>
-                                <li>The robot logs down both the ToF reading, the KF estimate of position, and the timestamp. Whenever the ToF reading is not available, the last available ToF sensor reading is logged.</li>
-                                <li>At the end of the execution, the robot applies active brake and sends data back to the PC.</li>
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab12/lab12-sim-final.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted">  </span>
+
+                        <p>
+                            However, everything happened in lab 11 is inside simulation environment. In this lab, we will incorporate the real robot in a real map, and try to do localization with it. The localization task performed in this lab is simplified. Upon signaled by the laptop, the robot will be manually placed in one of the four spots in the map, and it will turn in place 360 degrees, taking a ToF measurement every 20 degrees. The robot will then transmit the ToF sensor readings back to the laptop. The laptop will then use a uniform prior belief, and run the update step of the Bayes filter algorithm to estimate the location of the robot.
+                        </p>
+
+                        <h2 class="section-heading">Implementation</h2>
+
+                        <h3 class="section-subheading">Robot (embedded Arduino) implementation</h3>
+
+                        <p>
+                            Three BLE robot commands are added for this lab:
+                            <ul class="list-unstyled">
+                                <ul>
+                                    <li><code>MAKE_OBSERVATION</code>: the robot will turn in place for 360 degrees (counter-clockwise) in 20 degree steps. The robot takes a ToF measurement every 20 degree, and stores the ToF measurements in a local array. A total of 18 measurements are taken.</li>
+                                    <li><code>RESET_OBSERVATION</code>: resets all the global variables used in <code>MAKE_OBSERVATION</code>. This command needs to be called between two <code>MAKE_OBSERVATION</code> procedures. Otherwise a hardware reset is required.</li>
+                                    <li><code>READ_ARR(ARR_IDX, ELEMENT_IDX)</code>: the way to read data on the robot. The first argument, <code>ARR_IDX</code>, specifies which array to read. In this context, there is only one array, so this argument will be <code>0</code> when called. The second argument, <code>ELEMENT_IDX</code>, specifies which element to read in the corresponding array. The robot will update the <code>TX_FLOAT</code> characteristic after this command is called, and the value can be read by laptop from there.</li>
+                                </ul>
                             </ul>
-                        </ul>
+                        </p>
+
+                        <h3 class="section-subheading">Python implementation</h3>
 
                         <iframe width="820" height="515"
                         src="https://www.youtube.com/embed/pfPmiwiKpls">
                         </iframe>
-                        <span class="caption text-muted">Robot running towards a wall while running KF filter (motion model + ToF readings).</span>
+                        <span class="caption text-muted">Video of the robot doing localization in spot (5, 3, 0). The Python running on my laptop triggers the robot to make an observation loop. ToF sensor measurements are transmitted to the laptop afterwards, and the laptop runs the Bayes filter update step to make a prediction of the robot's state. Both the ground truth (green dot) and the estimate position (blue dot) are plotted in the virtual map.</span>
 
-                        <a href="#!"><img class="img-fluid" src="assets/img/lab7/kf-real.png" width = 600 alt="..." /></a>
-                        <span class="caption text-muted"> Robot-calculated Kalman filter estimation of position overlayed with robot ToF readings. When ToF reading is not available at a timestamp, the plot uses the last available ToF reading, thus creating the stepping effect on the ToF distance plot. </span>
+                        <h2 class="section-heading">Spot #1 (-3, -2, 0)</h2>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_n3_n2_0.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted">  </span>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_n3_n2_0_text.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted">  </span>
+
+                        <h2 class="section-heading">Spot #2 (0, 3, 0)</h2>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_0_3_0.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted">  </span>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_0_3_0_text.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted">  </span>
+
+
+                        <h2 class="section-heading">Spot #3 (5, -3, 0)</h2>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_5_n3_0.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted">  </span>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_5_n3_0_text.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted">  </span>
+
+
+                        <h2 class="section-heading">Spot #4 (5, 3, 0)</h2>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_5_3_0.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted">  </span>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_5_3_0_text.png" width = 600 alt="..." /></a>
+                        <span class="caption text-muted">  </span>
+
+
+
+
+                        <ul class="list-unstyled">
+                            <ul>
+                                <li>The robot starts with motor input = 0. It sits still. It is collecting ToF sensor value.</li>
+                            </ul>
+                        </ul>
+
+                        
 
                         <a href="https://anyafp.github.io/ece4960/" class="link-primary">here</a>
 
-                        <h2 class="section-heading">WIP</h2>
 
                     </div>
                 </div>
