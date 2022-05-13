@@ -202,7 +202,17 @@ def perform_observation_loop(self):
                         </iframe>
                         <span class="caption text-muted">Video of the robot doing localization in spot (5, 3, 0). The Python running on my laptop triggers the robot to make an observation loop. ToF sensor measurements are transmitted to the laptop afterwards, and the laptop runs the Bayes filter update step to make a prediction of the robot's state. Both the ground truth (green dot) and the estimate position (blue dot) are plotted in the virtual map.</span>
 
-                        <h2 class="section-heading">Spot #1 (-3, -2, 0)</h2>
+                        <h2 class="section-heading">Localization in 4 spots</h2>
+
+                        <p>
+                            Next I am going to present the results when doing localization in the four required spots: <code>(-3, -2, 0), (0, 3, 0), (5, -3, 0), (5, 3, 0)</code>. For each spot, I am presenting the plotter map view and the LOG messages. I will also discuss how close the estimate is from the ground truth and the results.
+                        </p>
+
+                        <h3 class="section-subheading">Spot #1 (-3, -2, 0)</h3>
+
+                        <p>
+                            For this spot, we only see the blue dot (estimated state) on the plotter. This is because the estimated state is the same as the ground truth state. However, since the plotter map only shows the <code>x, y</code> location, we also need to check the LOG message to make sure the orientation is correct as well. From the LOG message, we see that the yaw index is <code>10</code>, which corresponds to degree <code>20</code>. The correct orientation should be <code>0 degrees</code>. There is this <code>20 degree</code> difference between the ground truth and the localization estimate. I would argue that this is very good results, considering the gyroscope-accumulated yaw could drift when taking measurements, and the ToF sensor is, after all, not that accurate. Another reason being that an offset of <code>20 degrees</code> in orientation would only result in <code>1-cos(20 degrees) = 6%</code> difference of the ToF measurement, which is close to the error band of the ToF sensor.
+                        </p>
 
                         <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_n3_n2_0.png" width = 600 alt="..." /></a>
                         <span class="caption text-muted">  </span>
@@ -210,7 +220,11 @@ def perform_observation_loop(self):
                         <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_n3_n2_0_text.png" width = 600 alt="..." /></a>
                         <span class="caption text-muted">  </span>
 
-                        <h2 class="section-heading">Spot #2 (0, 3, 0)</h2>
+                        <h3 class="section-subheading">Spot #2 (0, 3, 0)</h3>
+
+                        <p>
+                            The results from this spot is similar to that in the last spot. We see on the plotter that the ground truth and the Bayes estimate overlaps, meaning that <code>x, y</code> estimates is identical. However, the yaw index is <code>8</code>, which corresponds to <code>-20 degrees</code>. I call this very good result as there are errors in the ToF sensor and gyroscope. Same reason as in the last spot.
+                        </p>
 
                         <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_0_3_0.png" width = 600 alt="..." /></a>
                         <span class="caption text-muted">  </span>
@@ -219,7 +233,11 @@ def perform_observation_loop(self):
                         <span class="caption text-muted">  </span>
 
 
-                        <h2 class="section-heading">Spot #3 (5, -3, 0)</h2>
+                        <h3 class="section-subheading">Spot #3 (5, -3, 0)</h3>
+
+                        <p>
+                            This time we can see that the <code>x, y, yaw</code> states are all different between the Bayes estimate and the ground truth. However, we can see from the LOG message that the yaw angle is not that far off. In addition, the <code>x, y</code> 2d location is also very close to the ground truth. In addition to sensor errors, the reason of this slightly off estimate could be that the robot is far from the walls in the north direction and the west direction. When the wall is far away, ToF sensor readings become less reliable and less accurate. I believe this error is reasonable given the capabilities of the ToF sensor.
+                        </p>
 
                         <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_5_n3_0.png" width = 600 alt="..." /></a>
                         <span class="caption text-muted">  </span>
@@ -228,13 +246,21 @@ def perform_observation_loop(self):
                         <span class="caption text-muted">  </span>
 
 
-                        <h2 class="section-heading">Spot #4 (5, 3, 0)</h2>
+                        <h3 class="section-subheading">Spot #4 (5, 3, 0)</h3>
+
+                        <p>
+                            In this estimate, the yaw angle is correct (<code>index = 9</code> same as <code>angle = 0 degrees</code>). The <code>x</code> position is also correct, but the <code>y</code> position is off by one grid. I believe this is very reasonable as the south wall is very, very far away from the robot, and it is reaching the limit of the ToF sensor's ranging length. Even though the north and east walls are close to the robot, the error measurements in the south direction could dominate.
+                        </p>
 
                         <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_5_3_0.png" width = 600 alt="..." /></a>
                         <span class="caption text-muted">  </span>
 
                         <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_5_3_0_text.png" width = 600 alt="..." /></a>
                         <span class="caption text-muted">  </span>
+
+                        <p>
+                            In summary, is this lab successful? I think so because the Bayes estimates are not far away from the robot's ground truth, and both the ToF sensor and the gyroscope are not the most accurate ones. This leads to another question: do I trust this localization model enough such that I will use it for lab 13? Probably not since the "turning in place" action will actually change the yaw angle of the robot. and if the robot is to travel a long distance in each step, then any errors could be catastrophic for the robot's route.
+                        </p>
 
                     </div>
                 </div>
