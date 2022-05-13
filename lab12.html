@@ -67,10 +67,14 @@
                         <span class="caption text-muted">  </span>
 
                         <p>
-                            However, everything happened in lab 11 is inside simulation environment. In this lab, we will incorporate the real robot in a real map, and try to do localization with it. The localization task performed in this lab is simplified. Upon signaled by the laptop, the robot will be manually placed in one of the four spots in the map, and it will turn in place 360 degrees, taking a ToF measurement every 20 degrees. The robot will then transmit the ToF sensor readings back to the laptop. The laptop will then use a uniform prior belief, and run the update step of the Bayes filter algorithm to estimate the location of the robot.
+                            However, everything happened in lab 11 is inside simulation environment. In this lab, we will incorporate the real robot in a real map, and try to do localization with it. The localization task performed in this lab is simplified. The robot will be manually placed in one of the four spots in the map, and it will turn in place 360 degrees when it receives a command from the laptop. When it is turning in place, it will take a ToF measurement every 20 degrees (that is 18 measurements in total). The robot will then transmit the ToF sensor readings back to the laptop. The laptop will run the Bayes algorithm to perform localization of the robot. Because the robot is not moving, it will start with a uniform prior belief, and it will run the update step of the Bayes filter algorithm to estimate the location of the robot.
                         </p>
 
                         <h2 class="section-heading">Implementation</h2>
+
+                        <p>
+                            Because the robot and my laptop need to work together in this lab, I am dividing the implementation into two parts: robot implementation and Python implementation.
+                        </p>
 
                         <h3 class="section-subheading">Robot (embedded Arduino) implementation</h3>
 
@@ -80,12 +84,118 @@
                                 <ul>
                                     <li><code>MAKE_OBSERVATION</code>: the robot will turn in place for 360 degrees (counter-clockwise) in 20 degree steps. The robot takes a ToF measurement every 20 degree, and stores the ToF measurements in a local array. A total of 18 measurements are taken.</li>
                                     <li><code>RESET_OBSERVATION</code>: resets all the global variables used in <code>MAKE_OBSERVATION</code>. This command needs to be called between two <code>MAKE_OBSERVATION</code> procedures. Otherwise a hardware reset is required.</li>
-                                    <li><code>READ_ARR(ARR_IDX, ELEMENT_IDX)</code>: the way to read data on the robot. The first argument, <code>ARR_IDX</code>, specifies which array to read. In this context, there is only one array, so this argument will be <code>0</code> when called. The second argument, <code>ELEMENT_IDX</code>, specifies which element to read in the corresponding array. The robot will update the <code>TX_FLOAT</code> characteristic after this command is called, and the value can be read by laptop from there.</li>
+                                    <li><code>READ_ARR(ARR_IDX, ELEMENT_IDX)</code>: the way to read data on the robot. The first argument, <code>ARR_IDX</code>, specifies which array to read. In this context, there is only one array, so this argument will be <code>0</code> when called. The second argument, <code>ELEMENT_IDX</code>, specifies which element to read in the corresponding array. The robot will update the <code>TX_FLOAT</code> characteristic after this command is called, and the value can be read by laptop. The laptop reads the entire array by iterating <code>ELEMENT_IDX</code>.</li>
                                 </ul>
                             </ul>
                         </p>
 
+                        <p>
+                            Implementation of <code>MAKE_OBSERVATION</code> is straight-forward. Code reusing from <a href="https://qd39l.github.io/fast-robots/lab9.html" class="link-primary">lab 9: Mapping</a> is the key. PID control is used to control the orientation of the robot. Gyroscope-accumulated yaw is used as PID input. When a measurement is taken, the robot stores the values in an array that is living in program stack.
+                        </p>
+
+                        <p>
+                            <code>RESET_OBSERVATION</code> simply resets all the flags, indexing variables, and temporary arrays. If <code>RESET_OBSERVATION</code> is not called between two calls of <code>MAKE_OBSERVATION</code>, the second call of <code>MAKE_OBSERVATION</code> will not work (or it will, but with undefined behavior).
+                        </p>
+
+                        <p>
+                            I found that using <code>READ_ARR(ARR_IDX, ELEMENT_IDX)</code> to retrieve array values is better than using event handler in Python. Using the event handler (with BLE notification) in Python is tricky: we will need to use the <code>async</code> feature inside Jupyter Notebook. I am no expert of either <code>async</code> or Jupyter Notebook, so even though switching to <code>READ_ARR</code> means rewriting of all my previous BLE code, I am doing to reduce the risk of hitting issues that will take much longer time to resolve.
+                        </p>
+
+                        <p>
+                            Here is a code snippet of how the <code>READ_ARR</code> function works in the Artemis board.
+                        </p>
+
+                        <pre>
+                            <code>
+case READ_ARR:
+Serial.println("Command READ_ARR triggered");
+int read_arr_type, read_idx;
+
+// Extract the next value from the command string as an integer
+success = robot_cmd.get_next_value(read_arr_type);
+if (!success)
+    return;
+
+// Extract the next value from the command string as an integer
+success = robot_cmd.get_next_value(read_idx);
+if (!success)
+    return;
+
+// send back the array index to be read
+if (read_arr_type == 0){
+    tx_characteristic_float.writeValue(ble_tof_data[read_idx]);
+}
+else if (read_arr_type == 1){
+    tx_characteristic_float.writeValue(ble_angle_data[read_idx]);
+}
+
+break;
+                            </code>
+                        </pre>
+
                         <h3 class="section-subheading">Python implementation</h3>
+
+                        <p>
+                            Python implementation is also straight-forward. The instructors have provided a framework in a class <code>RealRobot</code>. This class has a function <code>perform_observation_loop</code>, and it is all that we need to implement. This function takes no arguments, and it returns a column numpy array of the range values in meters. Assuming that the robot's microcontroller has all the commands implemented correctly, this Python function will only need to do the following things:
+                            <ul class="list-unstyled">
+                                <ul>
+                                    <li>Use <code>RESET_OBSERVATION</code> command to prepare the subsequent call of <code>MAKE_OBSERVATION</code>.</li>
+                                    <li>Use <code>MAKE_OBSERVATION</code> command to tell the robot to begin spinning in place and taking observations.</li>
+                                    <li>Sleep for some time to let the robot finish its measurements</li>
+                                    <li>Use <code>READ_ARR</code> command to get all the measurement values</li>
+                                </ul>
+                            </ul>
+                            Here is a code snippet for the implementation of <code>perform_observation_loop</code>.
+                        </p>
+
+                        <pre>
+                            <code>
+def perform_observation_loop(self):
+
+    # Connect to the Artemis Device
+    ble.connect()
+
+    # reset observation
+    ble.send_command(CMD.RESET_OBSERVATION, "")
+
+    # trigger data collection
+    ble.send_command(CMD.MAKE_OBSERVATION, "")
+
+    # sleep for collection to complete
+    time.sleep(25)
+
+    # get array length
+    ble.send_command(CMD.GET_ARR_LENGTH, "")
+    num_samples = ble.receive_float(ble.uuid['RX_FLOAT'])
+
+    # iterate over tof data and angle data. get both
+    tof_data = []
+    angle_data = []
+
+    for i in range(int(num_samples)):
+        ble.send_command(CMD.READ_ARR, f"0|{i}")
+        tof_data.append(ble.receive_float(ble.uuid['RX_FLOAT']))
+
+        ble.send_command(CMD.READ_ARR, f"1|{i}")
+        angle_data.append(ble.receive_float(ble.uuid['RX_FLOAT']))
+
+    # Disconnect
+    ble.disconnect()
+
+    # sanity check print tof sensor readings
+    print(tof_data)
+
+    return np.array(tof_data)[np.newaxis].T / 1000, np.zeros((1,1))
+                            </code>
+                        </pre>
+
+                        <p>
+                            Note that my code has one more command implemented: <code>GET_ARR_LENGTH</code>. This is optional. This command gets the length of the array from the microcontroller. It simply makes the code easier to maintain.
+                        </p>
+
+                        <p>
+                            The video below shows the process of doing one localization. Python on my laptop starts running first, then the robot receives the <code>MAKE_OBSERVATION</code> command and starts spinning and taking measurements. After that is finished, Python reads the array, passes it into the already-exists localization code, and displays both the estimated location (blue dot) and the ground truth location (green dot) on the plotter. 
+                        </p>
 
                         <iframe width="820" height="515"
                         src="https://www.youtube.com/embed/pfPmiwiKpls">
@@ -125,20 +235,6 @@
 
                         <a href="#!"><img class="img-fluid" src="assets/img/lab12/point_5_3_0_text.png" width = 600 alt="..." /></a>
                         <span class="caption text-muted">  </span>
-
-
-
-
-                        <ul class="list-unstyled">
-                            <ul>
-                                <li>The robot starts with motor input = 0. It sits still. It is collecting ToF sensor value.</li>
-                            </ul>
-                        </ul>
-
-                        
-
-                        <a href="https://anyafp.github.io/ece4960/" class="link-primary">here</a>
-
 
                     </div>
                 </div>
