@@ -6,7 +6,7 @@
         <meta name="description" content="Github web page for ECE 5960: Design and Implementation of fast robots (2022SP)." />
         <meta name="author" content="Owen Deng (qd39@cornell.edu)" />
         <!-- FIXME -->
-        <title>Fast Robots: Lab 7</title>
+        <title>Fast Robots: Lab 13</title>
         <link rel="icon" type="image/x-icon" href="assets/ai.png" />
         <!-- Font Awesome icons (free version)-->
         <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
@@ -41,12 +41,12 @@
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <div class="post-heading">
-                            <h1>Kalman filters</h1>
-                            <h2 class="subheading"> Sensor fusion </h2>
+                            <h1>Path Planning and Execution</h1>
+                            <h2 class="subheading"> Wrap up everything! </h2>
                             <span class="meta">
                                 Posted by
                                 <a href="#!">Owen Deng</a>
-                                on Mar 22, 2022
+                                on May 20, 2022
                             </span>
                         </div>
                     </div>
@@ -58,7 +58,209 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
-                        <h2 class="section-heading">WIP</h2>
+                        <h2 class="section-heading">Lab Objective</h2>
+
+                        <p>
+                            The goal of this lab is to come up with a solution such that the robot starts in one point in the map, and it executes a path such that it hits all the intermediate waypoints.
+                        </p>
+
+                        <p>
+                            Here are the waypoints:
+                            <ol class="list-group list-group-numbered">
+                                <li class="list-group-item"><code>(-4, -3)</code></li>
+                                <li class="list-group-item"><code>(-2, -1)</code></li>
+                                <li class="list-group-item"><code>(1, -1)</code></li>
+                                <li class="list-group-item"><code>(2, -3)</code></li>
+                                <li class="list-group-item"><code>(5, -3)</code></li>
+                                <li class="list-group-item"><code>(5, -2)</code></li>
+                                <li class="list-group-item"><code>(5, 3)</code></li>
+                                <li class="list-group-item"><code>(0, 3)</code></li>
+                                <li class="list-group-item"><code>(0, 0)</code></li>
+                            </ol>
+                        </p>
+
+                        <p>The unit here is not meters. It is the tile coordinate. Here is a screenshot of the path in the map. </p>
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab13/Trajectory.png" width = 800 alt="..." /></a>
+                        <span class="caption text-muted"> Trajectory of the path</span>
+
+                        <h2 class="section-heading">High Level Implementation</h2>
+
+                        <p>
+                            Here I will discuss the implementation I have come up with and my rationale for making these design choices.
+                            <ol class="list-group list-group-numbered">
+                                <li class="list-group-item">The robot is manually placed on <code>(-4, -3)</code> with orientation <code>0 degrees</code> facing east (right).</li>
+                                <li class="list-group-item">Laptop (Python) has a data structure storing all the waypoints. The robot's current state is initialized to <code>(-4, -3, 0)</code></li>
+                                <li class="list-group-item">Laptop fetches the next waypoint, and calculates 1. the degree the robot needs to turn from the current orientation such that it is directly facing the next way point, and 2. the straight line distance between the current state of the robot and the next waypoint.</li>
+                                <li class="list-group-item">From the distance, laptop calculates how long the motor needs to stay on (for a fixed PWM value) by solving a quadratic equation (will be explained later).</li>
+                                <li class="list-group-item">Laptop sends the command <code>MAKE_MOVE(angle, delay)</code> to the robot.</li>
+                                <li class="list-group-item">Robot makes the move to the next waypoint.</li>
+                                <li class="list-group-item">I press a key on the laptop to signal that the robot is done making the move. (or delay Python for some time)</li>
+                                <li class="list-group-item">The robot's current state is updated to be the waypoint it has just hit with its current orientation. To calculate the current orientation, simply accumulates all the turns because the robot starts with orientation of 0 degrees.</li>
+                                <li class="list-group-item">Repeat step <code>3</code> until all waypoints are hit.</li>
+                            </ol>
+                        </p>
+
+                        <h3 class="section-subheading">How do I calculate the motor delay when given a distance to travel?</h3>
+                        <p>
+                            I first did a series of <code>(delay, distance)</code> measurements. Upon receiving the command <code>MAKE_MOVE(angle, delay)</code>, the robot will turn on the motor with a PWM value of <code>20</code> for <code>delay</code> milliseconds and then brake. The PWM value is on the lower end because my engineering intuition is telling me slower movements will lead to better controlability and repeatability (not sure if these two words exist, but you get the idea). I changed the <code>delay</code> parameter and record the corresponding distances the robot has traveled.
+                        </p>
+
+                        <p>
+                            Here is the raw data in the form of <code>(delay (seconds), distance (tiles))</code>.
+                            <ol class="list-group list-group-numbered">
+                                <li class="list-group-item"><code>(0, 0)</code></li>
+                                <li class="list-group-item"><code>(0.5, 0.66)</code></li>
+                                <li class="list-group-item"><code>(0.7, 1.2)</code></li>
+                                <li class="list-group-item"><code>(0.9, 2)</code></li>
+                                <li class="list-group-item"><code>(1, 2.2)</code></li>
+                                <li class="list-group-item"><code>(1.2, 3.1)</code></li>
+                                <li class="list-group-item"><code>(1.4, 4)</code></li>
+                                <li class="list-group-item"><code>(1.5, 4.5)</code></li>
+                                <li class="list-group-item"><code>(1.8, 6)</code></li>
+                            </ol>
+
+                            Put it into an <a href="https://arachnoid.com/polysolve/" class="link-primary">online polynomial fitter</a> shows the following graph.
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab13/polyfit.png" width = 800 alt="..." /></a>
+                        <span class="caption text-muted"> Quadratic fit for data points </span>
+
+                        <p>
+                            I am doing a quadratic fit for these data. I acknowledge that this is not the best model. The robot's braking distance could be nonlinear with respect to delay. The robot's distance vs. delay should be roughly linear when it has reached steady state (constant speed). The quadratic fit should only work well before the robot has reached steady state. However, the fitted plot actually looks okay to me, and I am going to give it a shot. Here are the results of the quadratic fit. 
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab13/polyfitresults.png" width = 800 alt="..." /></a>
+                        <span class="caption text-muted"> Polynomial fitting results </span>
+
+                        <p>
+                            Then we have a simple quadratic equation that yields the distance when given the delay. Inverting it is a trivial matter. Simply plug into the root equation we learned in Algebra II. Really don't feel like I'll need to provide the code here.
+                        </p>
+
+                        <h3 class="section-subheading">Why don't you use PID control of ToF readings instead?</h3>
+
+                        <p>
+                            Actually I tried. PID control of ToF readings work well when my robot is driving towards a wall, and that was how I tuned my PID parameters. However, it becomes tricky when the robot is in the map because of these reasons:
+
+                            <ul class="list-unstyled">
+                                <ul>
+                                    <li>The ToF sensor becomes very noisy when the robot is far away from the wall. The wall is short and the ToF sensor may not pick it up when it is far away. (or it picks up the signal reflecting from the ground). When the ToF sensor readings become noisy or inaccurate, PID control is doomed. </li>
+                                    <li>PID control could be slower than my naive delay model because it typically involves oscillation around the set point. Unless my parameters are very good (which they are not), PID control in practice took more time than simply telling the robot to travel forward for a fixed time.</li>
+                                </ul>
+                            </ul>
+                        </p>
+
+                        <h3 class="section-subheading">Why don't you perform localization techniques to estimate the position of the robot?</h3>
+
+                        <p>
+                            Actually I tried this as well. I implemented the localization technique from lab 12: doing a 360 turn in place and estimate the position of the robot for every waypoint. However, I gave up because of the following reasons:
+
+                            <ul class="list-unstyled">
+                                <ul>
+                                    <li>Each run takes a very long time, and there are many people in the lab waiting to test their robots as well. </li>
+                                    <li>It is very, very, very slow, and this class is called fast robots. </li>
+                                    <li>Doing the 360 degree turn will mess up the orientation of the robot because of gyroscope drifts. For example, the robot could start off at 0 degrees, and at the end of the 360 degree turn, it is at 15/20 degrees orientation. I could use the magnotometer for absolute orientation, but that would mean more work/more testing/more development time, and I was not sure if it is worth the risk of not meeting the deadline. </li>
+                                    <li>An error in even one of the way points is detrimental to the path planning algorithm. I could integrate an odometry model to calculate the prior as well, but that means more work/more testing/more development time.</li>
+                                </ul>
+                            </ul>
+                        </p>
+
+                        <h2 class="section-heading">Implementation</h2>
+
+                        <p>Here comes the implementation! Again, I will divide into the Python portion and the Robot portion.</p>
+
+                        <h3 class="section-subheading">Python portion</h3>
+
+                        <p>
+                            The Python portion is easy, I am simply putting the written algorithm into code.
+                        </p>
+
+                        <p>
+                            The screenshot below shows the first part of my Python implementation. Variables are initialized, and the trajectory is encoded into a Python list. I added one more waypoint between <code>(5, -2)</code> and <code>(5, 3)</code> to limit the maximum distance of one robot move such that the quadratic equation still holds true.
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab13/python1.png" width = 500 alt="..." /></a>
+                        <span class="caption text-muted"> Python implementation (part 1) </span>
+
+                        <p>
+                            Then in the second part, the Python code computes the control angle and delay for the next way point, sends the command to the robot, wait for user confirmation of the robot's movement, and updates the current orientation and robot state to prepare for the next iteration. 
+                        </p>
+
+                        <center><a href="#!"><img class="img-fluid" src="assets/img/lab13/python2.png" width = 800 alt="..." /></a></center>
+                        <span class="caption text-muted"> Python implementation (part 2) </span>
+
+                        <h3 class="section-subheading">Robot portion</h3>
+
+                        <p>
+                            Robot implementation is also simple. PID orientation control reuses my code from the lab 6 (PID control), lab 8 (stunts), lab 9 (mapping), lab 12 (localization), plus some modifications.
+                        </p>
+
+                        <p>
+                            The robot first extracts the command and the command parameters from the BLE Python call. It then resets the IMU angle measurement (to avoid any timing issues) and invalidates the orientation difference tracking array. The orientation difference tracking array keeps track of the past <code>N (default 20)</code> IMU angle measurements. It is used to determine whether PID control has converged or not. 
+                        </p>
+                        <center><a href="#!"><img class="img-fluid" src="assets/img/lab13/artemis1.png" width = 600 alt="..." /></a></center>
+                        <span class="caption text-muted"> Robot implementation (part 1) </span>
+
+                        <p>
+                            The robot then enters the PID orientation control loop. In this lab, precision of orientation is more important than speed. Therefore, the output limit of the PID controller is restricted to <code>(-80, 80)</code>, and the PID control parameters are tuned down to be less aggressive. The same logic applies: the robot exits the loop when all the measurements in the orientation difference tracking array are less than a maximum error value (default 3 degrees). 
+                        </p>
+
+                        <a href="#!"><img class="img-fluid" src="assets/img/lab13/artemis2.png" width = 800 alt="..." /></a>
+                        <span class="caption text-muted"> Robot implementation (part 2) </span>
+
+                        <p>
+                            At the end, the robot travels forward for <code>delay</code> milliseconds before applying an active brake.
+                        </p>
+
+                        <center><a href="#!"><img class="img-fluid" src="assets/img/lab13/artemis3.png" width = 400 alt="..." /></a></center>
+                        <span class="caption text-muted"> Robot implementation (part 3) </span>
+
+                        <h2 class="section-heading">Better Orientation Control</h2>
+
+                        <p>Precise orientation control is very tricky in this lab because the floor is too slippery, and my PID controller was tuned mostly at home. To have better control of orientation. Also that if the motors are driven too hard, the robot turns too fast and gyroscope becomes slightly less accurate. I did two things to accomondate the situation:</p>
+
+                        <ul class="list-unstyled">
+                            <ul>
+                                <li>Lowered the PID parameters (P and D) to make it less aggressive but more precise (less gyroscope drift).</li>
+                                <li>Restrict PID controller output to <code>[-80, 80]</code> such that the robot turns slower. </li>
+                            </ul>
+                        </ul>
+
+                        <h2 class="section-heading">Final Results</h2>
+
+                        <p>
+                            Here is a video of my best run. I would argue that the result is pretty good. The robot did not hit a few of the waypoints exactly towards the end, but it hit the tiles containing those waypoints. Given that the granularity of localization is a grid, I would like to argue that my robot has "reached" all the waypoints (lolll). 
+                        </p>
+
+                        <p>
+                            And notice how fast the robot executes the path! I have been observing in the lab and this is faster than most people that are doing PID control or trying localization! The whole path execution takes less than 1 minute with minimum tradeoff in precision! 
+                        </p>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/RObCcdzQB10">
+                        </iframe>
+                        <span class="caption text-muted">Lab 13 best run.</span>
+
+                        <h3 class="section-subheading">Not so good: changing battery</h3>
+
+                        <p>
+                            One pitfall of using delay control of distance rather than PID control is that the distance the robot travels depend on battery voltage. In this video, I have replaced the battery with a new one (higher voltage presumably), and the robot overshoots a few times when it is travelling forward. However, the impact of this problem could be minimized with a good voltage regulator for the motor batteries. Otherwise, PID control would be a better option.
+                        </p>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/0zmSSl7t0iw">
+                        </iframe>
+                        <span class="caption text-muted">Lab 13 not so good run #1.</span>
+
+                        <h3 class="section-subheading">Not so good: big swing in PID orientation control </h3>
+
+                        <p>
+                            Here is a run with aggressive PID orientation control (output limit <code>[-255, 255]</code> with aggressive PID parameters). You can see that the robot sometimes make big swings (large amplitude oscillations). This has lead to some bad turns and ruined the path. In such cases, adding in localization could improve the performance.
+                        </p>
+
+                        <iframe width="820" height="515"
+                        src="https://www.youtube.com/embed/rpMurjG9iSw">
+                        </iframe>
+                        <span class="caption text-muted">Lab 13 not so good run #2.</span>
 
                     </div>
                 </div>
